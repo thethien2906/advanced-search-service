@@ -1,11 +1,16 @@
 from fastapi import APIRouter
 
-# Create a new router
+# Create an APIRouter instance
 router = APIRouter()
 
 @router.get("/")
 def read_root():
     """
-    Wellcome message
+    Root endpoint to confirm the service is running.
+    Provides a simple health check.
     """
-    return {"message": "Hello, World"}
+    return {
+        "message": "Hello, World",
+        "service": "Search Service",
+        "status": "running"
+    }

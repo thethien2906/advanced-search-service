@@ -1,8 +1,12 @@
 from fastapi import FastAPI
-from .api import endpoints
+from app.api import endpoints
 
-# Create the FastAPI application instance
-app = FastAPI(title="Search Service")
+# Create the main FastAPI application instance
+app = FastAPI(
+    title="Homeland's Finest - Search Service",
+    description="The advanced search microservice for the THQN platform.",
+    version="1.0.0"
+)
 
-# Include the API router
+# Include the API router from the endpoints module
 app.include_router(endpoints.router)
