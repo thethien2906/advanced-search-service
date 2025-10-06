@@ -1,7 +1,10 @@
+# /app/api/endpoints.py
 from fastapi import APIRouter, HTTPException
 import time
 from app.models.pydantic_models import SearchRequest, SearchResponse, ProductResponse
 from app.services.search_service import SearchService
+from app.services.database import DatabaseConnectionError
+
 # Create an APIRouter instance
 router = APIRouter()
 search_service = SearchService()
@@ -45,8 +48,14 @@ async def search_products(request: SearchRequest):
             results=product_responses,
             processing_time_ms=round(processing_time, 2),
         )
+    # Per Phase 3 guide, catch the specific DB error to return a 503 status
+    except DatabaseConnectionError as e:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Service Unavailable: Could not connect to the database. {str(e)}"
+        )
     except Exception as e:
-        # A generic catch-all for unexpected errors
+        # A generic catch-all for other unexpected errors
         raise HTTPException(
             status_code=500,
             detail=f"An internal server error occurred: {str(e)}"
