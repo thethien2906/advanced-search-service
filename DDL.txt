@@ -163,7 +163,7 @@ CREATE TABLE "Product" (
     "TypeProduct" TEXT,
     "Status" TEXT,
     "Note" TEXT,
-    "Embedding" VECTOR(384),
+    "Embedding" VECTOR(768),
     "CreatedAt" TIMESTAMPTZ,
     "UpdatedAt" TIMESTAMPTZ,
     CONSTRAINT fk_product_store FOREIGN KEY ("StoreID") REFERENCES "Store"("ID") ON DELETE CASCADE,
