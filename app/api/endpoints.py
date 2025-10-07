@@ -25,26 +25,18 @@ def read_root():
         "status": "running"
     }
 
-@router.post("/search", response_model=SearchResponse)
-async def search_products(request: SearchRequest, background_tasks: BackgroundTasks):
+
+async def _handle_search_request(search_function, request: SearchRequest, background_tasks: BackgroundTasks):
     """
-    Accepts a search query and returns a ranked list of products.
-    This is the main endpoint for the search microservice.
-    [Phase 5]: Publishes a search event to Kafka asynchronously.
+    Generic handler for processing a search request, logging, and formatting the response.
     """
     start_time = time.time()
     try:
-        # Call the search service with data from the request
-        search_results = search_service.search(
-            query=request.query_text,
-            limit=request.limit
-        )
-
-        # Transform the dictionaries into Pydantic models
+        search_results = search_function(query=request.query_text, limit=request.limit)
         product_responses = [ProductResponse(**item) for item in search_results]
 
         end_time = time.time()
-        processing_time = (end_time - start_time) * 1000  # Convert to ms
+        processing_time = (end_time - start_time) * 1000
 
         # Asynchronously publish search event to Kafka
         search_id = str(uuid.uuid4())
@@ -62,22 +54,31 @@ async def search_products(request: SearchRequest, background_tasks: BackgroundTa
             event_data
         )
 
-        # Construct the final response object
         return SearchResponse(
             query=request.query_text,
             total_results=len(product_responses),
             results=product_responses,
             processing_time_ms=round(processing_time, 2),
         )
-    # Per Phase 3 guide, catch the specific DB error to return a 503 status
     except DatabaseConnectionError as e:
-        raise HTTPException(
-            status_code=503,
-            detail=f"Service Unavailable: Could not connect to the database. {str(e)}"
-        )
+        raise HTTPException(status_code=503, detail=f"Service Unavailable: {str(e)}")
     except Exception as e:
-        # A generic catch-all for other unexpected errors
-        raise HTTPException(
-            status_code=500,
-            detail=f"An internal server error occurred: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
+
+@router.post("/search/semantic", response_model=SearchResponse, summary="Semantic Search Only")
+async def search_semantic(request: SearchRequest, background_tasks: BackgroundTasks):
+    """
+    Accepts a search query and returns a list of products based on semantic similarity ONLY.
+    The results from this endpoint are used to collect data for training the ML ranker.
+    """
+    return await _handle_search_request(search_service.search_semantic, request, background_tasks)
+
+
+@router.post("/search/ml", response_model=SearchResponse, summary="Hybrid Search with ML Re-ranking")
+async def search_with_ml(request: SearchRequest, background_tasks: BackgroundTasks):
+    """
+    Accepts a search query and returns a ranked list of products using the full hybrid ML model.
+    This endpoint should be used once the ranking model has been adequately trained.
+    """
+    return await _handle_search_request(search_service.search_with_ml, request, background_tasks)

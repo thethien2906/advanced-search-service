@@ -26,9 +26,9 @@ class SearchService:
             print(f"CRITICAL: Failed to load sentence-transformers model: {e}")
             raise
 
-    def search(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+    def _get_semantic_candidates(self, query: str) -> List[Dict[str, Any]]:
         """
-        Phase 4 implementation: Performs semantic search followed by ML re-ranking.
+        Private helper method to retrieve and format semantic search candidates from the database.
         """
         if not self.model:
             raise RuntimeError("Search model is not available.")
@@ -73,24 +73,42 @@ class SearchService:
                 "price": row[7],
                 "store_status": row[8],
                 "is_certified": row[9],
-                "relevance_score": 1 - row[10]
+                "relevance_score": 1 - row[10] # Score is 1 - distance
             })
+        return candidates
 
-        # Step 4: If ranker model isn't loaded, return results based on semantic score
+    def search_semantic(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """
+        Performs a pure semantic search and returns the results directly.
+        This method is used for collecting training data before the ML model is ready.
+        """
+        candidates = self._get_semantic_candidates(query)
+        return candidates[:limit]
+
+
+    def search_with_ml(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+        """
+        Performs semantic search followed by ML re-ranking.
+        """
+        # Step 1 & 2: Retrieve initial candidates
+        candidates = self._get_semantic_candidates(query)
+
+        # Step 3: If ranker model isn't loaded, return results based on semantic score
         if self.ranker.model is None:
+            print("WARNING: ML Ranker model not found. Falling back to semantic search results.")
             return candidates[:limit]
 
-        # Step 5: Extract features for all candidates
+        # Step 4: Extract features for all candidates
         feature_matrix = np.array([extract_features(p, query) for p in candidates])
 
-        # Step 6: Apply ML ranker to get new scores
+        # Step 5: Apply ML ranker to get new scores
         ml_scores = self.ranker.predict(feature_matrix)
 
-        # Step 7: Update relevance scores and re-sort
+        # Step 6: Update relevance scores and re-sort
         for i, product in enumerate(candidates):
             product["relevance_score"] = float(ml_scores[i])
 
         candidates.sort(key=lambda x: x["relevance_score"], reverse=True)
 
-        # Step 8: Return top N results
+        # Step 7: Return top N results
         return candidates[:limit]
