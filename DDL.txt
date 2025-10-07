@@ -477,6 +477,7 @@ CREATE TABLE "SearchLog" (
     "SessionID" TEXT,
     "QueryText" TEXT NOT NULL,
     "ResultCount" INTEGER,
+    "RankedProductIDs" JSONB,
     "CreatedAt" TIMESTAMPTZ,
     CONSTRAINT fk_searchlog_user FOREIGN KEY ("UserID") REFERENCES "User"("ID") ON DELETE SET NULL
 );

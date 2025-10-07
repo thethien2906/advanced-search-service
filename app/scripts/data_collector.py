@@ -32,16 +32,21 @@ def get_db_connection():
 
 def insert_log_to_db(cursor, event_data: dict):
     """Inserts a single search log event into the database."""
+    # Updated SQL to include the new column
     sql = """
-    INSERT INTO "SearchLog" ("ID", "UserID", "QueryText", "ResultCount", "CreatedAt")
-    VALUES (%s, %s, %s, %s, %s)
+    INSERT INTO "SearchLog" ("ID", "UserID", "QueryText", "ResultCount", "RankedProductIDs", "CreatedAt")
+    VALUES (%s, %s, %s, %s, %s, %s)
     ON CONFLICT ("ID") DO NOTHING;
     """
+    # Convert list of IDs to a JSON string for insertion
+    ranked_ids_json = json.dumps(event_data.get("ranked_product_ids"))
+
     params = (
         event_data.get("search_id"),
         event_data.get("user_id"),
         event_data.get("query_text"),
         event_data.get("result_count"),
+        ranked_ids_json, # Pass the JSON string
         event_data.get("timestamp")
     )
     try:
@@ -65,7 +70,7 @@ def main():
             KAFKA_TOPIC,
             bootstrap_servers=KAFKA_BROKER_URL,
             auto_offset_reset='earliest',
-            enable_auto_commit=False, # Manual commit control
+            enable_auto_commit=False,
             group_id=CONSUMER_GROUP_ID,
             value_deserializer=lambda x: json.loads(x.decode('utf-8'))
         )
@@ -79,12 +84,11 @@ def main():
             event_data = message.value
             try:
                 insert_log_to_db(db_cursor, event_data)
-                db_conn.commit()  # Commit after successful insert
-                consumer.commit() # Commit Kafka offset
+                db_conn.commit()
+                consumer.commit()
             except (Exception, psycopg2.Error) as e:
                 logger.error(f"Rolling back database transaction due to error: {e}")
                 db_conn.rollback()
-                # Do not commit Kafka offset, message will be re-processed later
 
     except KeyboardInterrupt:
         logger.info("Consumer stopped by user.")
