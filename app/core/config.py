@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     """
     DATABASE_URL: str = "postgresql://user:password@host:port/database"
     MODEL_NAME: str = "bkai-foundation-models/vietnamese-bi-encoder"
+    KAFKA_BROKER_URL: str = "kafka:9092"
+    KAFKA_SEARCH_EVENTS_TOPIC: str = "search_events"
 
     class Config:
         # This tells pydantic-settings to look for a .env file
