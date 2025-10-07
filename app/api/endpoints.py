@@ -3,8 +3,15 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 import time
 import uuid
 from datetime import datetime, timezone
-from app.models.pydantic_models import SearchRequest, SearchResponse, ProductResponse
+from app.models.pydantic_models import (
+    SearchRequest,
+    SearchResponse,
+    ProductResponse,
+    EnhancedEmbeddingRequest,
+    EmbeddingResponse
+)
 from app.services.search_service import SearchService
+from app.services.embedding_service import EmbeddingService
 from app.services.database import DatabaseConnectionError
 from app.services.kafka_producer import kafka_producer
 from app.core.config import settings
@@ -12,6 +19,7 @@ from app.core.config import settings
 # Create an APIRouter instance
 router = APIRouter()
 search_service = SearchService()
+embedding_service = EmbeddingService()
 
 @router.get("/")
 def read_root():
@@ -82,3 +90,17 @@ async def search_with_ml(request: SearchRequest, background_tasks: BackgroundTas
     This endpoint should be used once the ranking model has been adequately trained.
     """
     return await _handle_search_request(search_service.search_with_ml, request, background_tasks)
+
+
+@router.post("/embeddings", response_model=EmbeddingResponse, summary="Generate Product Embedding") # [cite: 261]
+def get_enhanced_embedding(request: EnhancedEmbeddingRequest):
+    """
+    Receives a set of product attributes, combines them, and returns a
+    normalized vector embedding.
+    """
+    try:
+        embedding_vector = embedding_service.create_enhanced_embedding(request)
+        return EmbeddingResponse(embedding=embedding_vector) #
+    except Exception as e:
+        # This will catch potential errors during the embedding process
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")

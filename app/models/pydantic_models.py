@@ -35,3 +35,21 @@ class SearchResponse(BaseModel):
     total_results: int = Field(..., example=3)
     results: List[ProductResponse]
     processing_time_ms: float = Field(..., example=50.7)
+
+
+
+class EnhancedEmbeddingRequest(BaseModel):
+    """
+    Defines the structured input for creating a product embedding.
+    """
+    product_name: str #
+    product_description: str #
+    product_category: Optional[str] = None #
+    product_story_title: Optional[str] = None #
+    product_made_by: Optional[str] = None #
+    product_type_name: Optional[str] = None #
+class EmbeddingResponse(BaseModel): #
+    """
+    Defines the structure of the embedding API's response.
+    """
+    embedding: List[float] #

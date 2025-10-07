@@ -26,6 +26,24 @@ class SearchService:
             print(f"CRITICAL: Failed to load sentence-transformers model: {e}")
             raise
 
+    def _expand_query(self, query: str) -> str:
+        """
+        Mở rộng truy vấn với các từ đồng nghĩa đã định nghĩa.
+        """
+        expanded_terms = []
+        for term in query.lower().split():
+            # Thêm chính thuật ngữ đó
+            if term not in expanded_terms:
+                expanded_terms.append(term)
+            # Nếu có từ đồng nghĩa, thêm nó vào
+            if term in SYNONYM_MAP and SYNONYM_MAP[term] not in expanded_terms:
+                expanded_terms.append(SYNONYM_MAP[term])
+
+        expanded_query = " ".join(expanded_terms)
+        if expanded_query != query:
+            print(f"Query expanded from '{query}' to '{expanded_query}'")
+        return expanded_query
+
     def _get_semantic_candidates(self, query: str) -> List[Dict[str, Any]]:
         """
         Private helper method to retrieve and format semantic search candidates from the database.
