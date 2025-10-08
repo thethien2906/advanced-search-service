@@ -1,4 +1,3 @@
-# /app/scripts/train_ranker.py
 import os
 import sys
 import psycopg2
@@ -7,11 +6,13 @@ import xgboost as xgb
 import numpy as np
 from dotenv import load_dotenv
 from typing import List, Dict, Any
+from sentence_transformers import SentenceTransformer
+from scipy.spatial.distance import cosine
 
-# Add the app directory to the Python path to allow for absolute imports
+# Add the app directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 from services.feature_extractor import extract_features, FEATURE_SCHEMA
+from core.config import settings
 
 # --- CONFIGURATION ---
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
@@ -19,6 +20,10 @@ load_dotenv(dotenv_path=dotenv_path)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 MODEL_OUTPUT_PATH = "app/models/ranker.xgb"
+
+print("Loading sentence-transformer model for training...")
+EMBEDDING_MODEL = SentenceTransformer(settings.MODEL_NAME)
+print("Model loaded.")
 
 def get_db_connection():
     """Establishes and returns a database connection."""
@@ -35,32 +40,32 @@ def create_labeled_dataset() -> pd.DataFrame:
     print("Connecting to the database to create a labeled dataset...")
     conn = get_db_connection()
 
-    # CORRECTED SQL QUERY: Replaced unnest with jsonb_array_elements_text
+    # CẬP NHẬT: Thêm pr."Name" và pr."Region" vào câu SQL
     sql_query = """
     WITH SearchResults AS (
-        -- Use jsonb_array_elements_text to correctly expand the JSON array of product IDs
         SELECT
             sl."ID" AS "SearchID",
             sl."QueryText",
-            value AS "ProductID", -- The expanded product ID is now in the 'value' column
+            value AS "ProductID",
             p."Name" AS "ProductName",
             p."Rating",
             p."ReviewCount",
             p."SaleCount",
             p."CategoryID",
             p."ProductImages",
+            p."Embedding",
             pv."BasePrice" AS "price",
             s."Status" AS "StoreStatus",
+            pr."Name" AS "ProvinceName", -- LẤY TÊN TỈNH
+            pr."Region" AS "RegionName",   -- LẤY TÊN VÙNG MIỀN
             EXISTS(SELECT 1 FROM "ProductCertificate" pc WHERE pc."ProductID" = p."ID") AS "IsCertified"
         FROM "SearchLog" sl,
-        -- This function correctly unnests the JSONB array into text rows
         LATERAL jsonb_array_elements_text(sl."RankedProductIDs")
-        -- Join the expanded product ID with the Product table
         JOIN "Product" p ON p."ID" = value::uuid
         JOIN "ProductVariant" pv ON p."ID" = pv."ProductID"
         JOIN "Store" s ON p."StoreID" = s."ID"
+        LEFT JOIN "Province" pr ON p."ProvinceID" = pr."ID"
     )
-    -- Left join with click logs remains the same to create the 'clicked' label
     SELECT
         sr.*,
         CASE WHEN scl."ID" IS NOT NULL THEN 1 ELSE 0 END AS "clicked"
@@ -79,19 +84,42 @@ def create_labeled_dataset() -> pd.DataFrame:
     finally:
         conn.close()
 
+def calculate_relevance_score(query_embedding: np.ndarray, product_embedding_str: str) -> float:
+    # ... (Giữ nguyên hàm này)
+    if not product_embedding_str:
+        return 0.0
+    try:
+        product_embedding = np.array(eval(product_embedding_str))
+        if product_embedding.shape != query_embedding.shape:
+             return 0.0
+        return 1 - cosine(query_embedding, product_embedding)
+    except:
+        return 0.0
+
+
 def train_xgboost_model(df: pd.DataFrame):
-    """
-    Trains an XGBoost ranking model from the prepared DataFrame.
-    """
     if df.empty:
         print("WARNING: Training data is empty. Skipping model training.")
         return
 
+    print("Pre-calculating query embeddings...")
+    unique_queries = df["QueryText"].unique()
+    query_embeddings = {query: EMBEDDING_MODEL.encode(query, normalize_embeddings=True) for query in unique_queries}
+
+    print("Calculating relevance scores for the dataset...")
+    df['relevance_score'] = df.apply(
+        lambda row: calculate_relevance_score(query_embeddings[row['QueryText']], row['Embedding']),
+        axis=1
+    )
+
     print("Starting feature extraction for the training dataset...")
 
+    # ======================================================================
+    # SỬA LỖI QUAN TRỌNG TẠI ĐÂY
+    # ======================================================================
     feature_vectors = df.apply(
         lambda row: extract_features({
-            "relevance_score": 0,
+            "relevance_score": row["relevance_score"],
             "rating": row["Rating"],
             "review_count": row["ReviewCount"],
             "sale_count": row["SaleCount"],
@@ -99,10 +127,13 @@ def train_xgboost_model(df: pd.DataFrame):
             "product_images": row["ProductImages"],
             "is_certified": row["IsCertified"],
             "store_status": row["StoreStatus"],
-            "category_id": row["CategoryID"]
+            "category_id": row["CategoryID"],
+            "province_name": row["ProvinceName"], # THÊM DỮ LIỆU
+            "region_name": row["RegionName"]   # THÊM DỮ LIỆU
         }, row["QueryText"]),
         axis=1
     )
+    # ======================================================================
 
     X_train = np.array(feature_vectors.tolist())
     y_train = df["clicked"].values
@@ -110,7 +141,11 @@ def train_xgboost_model(df: pd.DataFrame):
     print(f"Feature matrix shape: {X_train.shape}")
     print(f"Labels shape: {y_train.shape}")
 
-    dtrain = xgb.DMatrix(X_train, label=y_train)
+    print(f"Number of clicked items in training data: {np.sum(y_train)}")
+    if np.sum(y_train) == 0:
+        print("WARNING: No clicks found in the training data. The model may not learn effectively.")
+
+    dtrain = xgb.DMatrix(X_train, label=y_train, feature_names=FEATURE_SCHEMA)
     params = {
         'objective': 'binary:logistic',
         'eval_metric': 'logloss',
@@ -124,8 +159,10 @@ def train_xgboost_model(df: pd.DataFrame):
     model.save_model(MODEL_OUTPUT_PATH)
     print(f"✅ New ranker model successfully trained and saved to {MODEL_OUTPUT_PATH}")
 
+    feature_importance = model.get_score(importance_type='gain')
+    print("Feature Importance (Gain):", feature_importance)
+
 def main():
-    """Main function to run the training pipeline."""
     labeled_data = create_labeled_dataset()
     train_xgboost_model(labeled_data)
 

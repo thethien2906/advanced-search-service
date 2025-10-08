@@ -26,24 +26,6 @@ class SearchService:
             print(f"CRITICAL: Failed to load sentence-transformers model: {e}")
             raise
 
-    def _expand_query(self, query: str) -> str:
-        """
-        Mở rộng truy vấn với các từ đồng nghĩa đã định nghĩa.
-        """
-        expanded_terms = []
-        for term in query.lower().split():
-            # Thêm chính thuật ngữ đó
-            if term not in expanded_terms:
-                expanded_terms.append(term)
-            # Nếu có từ đồng nghĩa, thêm nó vào
-            if term in SYNONYM_MAP and SYNONYM_MAP[term] not in expanded_terms:
-                expanded_terms.append(SYNONYM_MAP[term])
-
-        expanded_query = " ".join(expanded_terms)
-        if expanded_query != query:
-            print(f"Query expanded from '{query}' to '{expanded_query}'")
-        return expanded_query
-
     def _get_semantic_candidates(self, query: str) -> List[Dict[str, Any]]:
         """
         Private helper method to retrieve and format semantic search candidates from the database.
@@ -61,11 +43,14 @@ class SearchService:
                 pv."BasePrice" AS "price",
                 s."Status" AS "StoreStatus",
                 EXISTS (SELECT 1 FROM "ProductCertificate" pc WHERE pc."ProductID" = p."ID") AS "IsCertified",
-                (p."Embedding" <=> %s) AS distance
+                (p."Embedding" <=> %s) AS distance,
+                pr."Name" AS "ProvinceName",
+                pr."Region" AS "RegionName"
             FROM "Product" p
             INNER JOIN "ProductVariant" pv ON p."ID" = pv."ProductID"
             INNER JOIN "InventoryProduct" ip ON pv."ID" = ip."ProductVariantID"
             INNER JOIN "Store" s ON p."StoreID" = s."ID"
+            LEFT JOIN "Province" pr ON p."ProvinceID" = pr."ID" -- MỚI: JOIN với bảng Province
             WHERE
                 ip."Quantity" > 0
                 AND p."IsActive" = true
@@ -87,11 +72,13 @@ class SearchService:
                 "review_count": row[3],
                 "sale_count": row[4],
                 "category_id": row[5],
-                "product_images": row[6],
+                "product_images": row[6] or [],
                 "price": row[7],
                 "store_status": row[8],
                 "is_certified": row[9],
-                "relevance_score": 1 - row[10] # Score is 1 - distance
+                "relevance_score": 1 - row[10],
+                "province_name": row[11],
+                "region_name": row[12]
             })
         return candidates
 

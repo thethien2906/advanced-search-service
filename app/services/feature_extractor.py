@@ -1,6 +1,6 @@
 # /app/services/feature_extractor.py
 import math
-from typing import List
+from typing import List, Optional
 
 # Rule-based keyword mapping for category detection
 CATEGORY_KEYWORDS = {
@@ -10,7 +10,6 @@ CATEGORY_KEYWORDS = {
     "jewelry_category_uuid": ["vòng tay", "trang sức"],
 }
 
-# The order of features must be consistent
 FEATURE_SCHEMA = [
     "semantic_similarity",
     "rating",
@@ -20,9 +19,17 @@ FEATURE_SCHEMA = [
     "image_count",
     "is_certified",
     "store_status_approved",
-    "category_match"
+    "category_match",
+    "region_match"
 ]
-
+REGION_KEYWORDS = {
+    "Tây Bắc Bộ": ["tây bắc", "sơn la", "hòa bình", "lai châu"],
+    "Đồng bằng sông Hồng": ["hà nội", "miền bắc", "đồng bằng bắc bộ"],
+    "Bắc Trung Bộ": ["huế", "thanh hóa", "nghệ an", "quảng trị", "bắc trung bộ"],
+    "Tây Nguyên": ["tây nguyên", "đà lạt", "lâm đồng", "gia lai", "đắk lắk"],
+    "Đông Nam Bộ": ["sài gòn", "hồ chí minh", "miền đông", "bình phước"],
+    "Đồng bằng sông Cửu Long": ["miền tây", "miền nam", "cần thơ", "an giang", "bến tre", "sóc trăng"]
+}
 
 def detect_query_categories(query: str) -> List[str]:
     """Returns a list of category UUIDs that match the query keywords."""
@@ -40,6 +47,20 @@ def check_category_match(product_category_ids: List[str], query_category_ids: Li
         return 0
     # Check for intersection between the two lists
     return 1 if any(cat in product_category_ids for cat in query_category_ids) else 0
+
+def detect_query_region(query: str) -> Optional[str]:
+    """Returns the region name that matches the query keywords."""
+    query_lower = query.lower()
+    for region_name, keywords in REGION_KEYWORDS.items():
+        if any(keyword in query_lower for keyword in keywords):
+            return region_name
+    return None
+
+def check_region_match(product_region: Optional[str], query_region: Optional[str]) -> int:
+    """Returns 1 if product's region matches the detected query region."""
+    if query_region and product_region and product_region == query_region:
+        return 1
+    return 0
 
 
 def extract_features(product_data: dict, query: str) -> List[float]:
@@ -75,5 +96,10 @@ def extract_features(product_data: dict, query: str) -> List[float]:
         product_categories = []
     category_match = check_category_match(product_categories, query_categories)
     features.append(category_match)
+
+    query_region = detect_query_region(query)
+    product_region = product_data.get("region_name")
+    region_match = check_region_match(product_region, query_region)
+    features.append(region_match)
 
     return features

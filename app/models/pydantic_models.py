@@ -40,14 +40,26 @@ class SearchResponse(BaseModel):
 
 class EnhancedEmbeddingRequest(BaseModel):
     """
-    Defines the structured input for creating a product embedding.
+    Defines the final, comprehensive structure for creating a product embedding.
     """
-    product_name: str #
-    product_description: str #
-    product_category: Optional[str] = None #
-    product_story_title: Optional[str] = None #
-    product_made_by: Optional[str] = None #
-    product_type_name: Optional[str] = None #
+    # Product specific info
+    product_name: str
+    product_description: str
+    product_story_title: Optional[str] = None
+    product_story_detail: Optional[str] = None
+
+    # Categorization info
+    product_category_names: Optional[List[str]] = None
+    product_type_name: Optional[str] = None
+    product_made_by: Optional[str] = None
+    variant_names: Optional[List[str]] = None
+
+    # Store and Location info
+    store_name: Optional[str] = None
+    store_story_detail: Optional[str] = None
+    province_name: Optional[str] = None
+    region_name: Optional[str] = None
+
 class EmbeddingResponse(BaseModel): #
     """
     Defines the structure of the embedding API's response.
