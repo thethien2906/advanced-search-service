@@ -38,7 +38,7 @@ class SearchResponse(BaseModel):
 
 
 
-class EnhancedEmbeddingRequest(BaseModel):
+class EmbeddingRequest(BaseModel):
     """
     Defines the final, comprehensive structure for creating a product embedding.
     """

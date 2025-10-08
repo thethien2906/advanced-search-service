@@ -3,7 +3,7 @@ from sentence_transformers import SentenceTransformer
 import numpy as np
 from typing import List
 # Giả sử pydantic_models.py đã được cập nhật với class mới
-from app.models.pydantic_models import EnhancedEmbeddingRequest
+from app.models.pydantic_models import EmbeddingRequest
 
 class EmbeddingService:
     """
@@ -19,7 +19,7 @@ class EmbeddingService:
         self.max_story_words = 150
         print(f"Embedding model loaded. Description word limit set to {self.max_desc_words}.")
 
-    def create_enhanced_embedding(self, data: EnhancedEmbeddingRequest) -> List[float]:
+    def create_enhanced_embedding(self, data: EmbeddingRequest) -> List[float]:
         """
         Creates a high-quality, normalized embedding from multiple product fields.
         """

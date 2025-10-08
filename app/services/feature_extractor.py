@@ -28,7 +28,10 @@ REGION_KEYWORDS = {
     "Bắc Trung Bộ": ["huế", "thanh hóa", "nghệ an", "quảng trị", "bắc trung bộ"],
     "Tây Nguyên": ["tây nguyên", "đà lạt", "lâm đồng", "gia lai", "đắk lắk"],
     "Đông Nam Bộ": ["sài gòn", "hồ chí minh", "miền đông", "bình phước"],
-    "Đồng bằng sông Cửu Long": ["miền tây", "miền nam", "cần thơ", "an giang", "bến tre", "sóc trăng"]
+    "Đồng bằng sông Cửu Long": [
+        "miền tây", "miền nam", "cần thơ", "an giang", "bến tre",
+        "sóc trăng", "đồng bằng sông cửu long", "phú quốc"
+    ]
 }
 
 def detect_query_categories(query: str) -> List[str]:

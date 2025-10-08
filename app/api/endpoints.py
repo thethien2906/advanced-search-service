@@ -7,7 +7,7 @@ from app.models.pydantic_models import (
     SearchRequest,
     SearchResponse,
     ProductResponse,
-    EnhancedEmbeddingRequest,
+    EmbeddingRequest,
     EmbeddingResponse
 )
 from app.services.search_service import SearchService
@@ -93,7 +93,7 @@ async def search_with_ml(request: SearchRequest, background_tasks: BackgroundTas
 
 
 @router.post("/embeddings", response_model=EmbeddingResponse, summary="Generate Product Embedding") # [cite: 261]
-def get_enhanced_embedding(request: EnhancedEmbeddingRequest):
+def get_enhanced_embedding(request: EmbeddingRequest):
     """
     Receives a set of product attributes, combines them, and returns a
     normalized vector embedding.
