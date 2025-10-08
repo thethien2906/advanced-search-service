@@ -19,7 +19,7 @@ class EmbeddingService:
         self.max_story_words = 150
         print(f"Embedding model loaded. Description word limit set to {self.max_desc_words}.")
 
-    def create_enhanced_embedding(self, data: EmbeddingRequest) -> List[float]:
+    def create_embedding(self, data: EmbeddingRequest) -> List[float]:
         """
         Creates a high-quality, normalized embedding from multiple product fields.
         """

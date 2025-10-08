@@ -92,14 +92,14 @@ async def search_with_ml(request: SearchRequest, background_tasks: BackgroundTas
     return await _handle_search_request(search_service.search_with_ml, request, background_tasks)
 
 
-@router.post("/embeddings", response_model=EmbeddingResponse, summary="Generate Product Embedding") # [cite: 261]
-def get_enhanced_embedding(request: EmbeddingRequest):
+@router.post("/embeddings", response_model=EmbeddingResponse, summary="Generate Product Embedding")
+def get_embedding(request: EmbeddingRequest):
     """
     Receives a set of product attributes, combines them, and returns a
     normalized vector embedding.
     """
     try:
-        embedding_vector = embedding_service.create_enhanced_embedding(request)
+        embedding_vector = embedding_service.create_embedding(request)
         return EmbeddingResponse(embedding=embedding_vector) #
     except Exception as e:
         # This will catch potential errors during the embedding process

@@ -38,7 +38,7 @@ class SearchService:
 
         # Step 2: Retrieve initial candidates from the database
         sql_query = """
-            SELECT
+            SELECT DISTINCT ON (p."ID")
                 p."ID", p."Name", p."Rating", p."ReviewCount", p."SaleCount", p."CategoryID", p."ProductImages",
                 pv."BasePrice" AS "price",
                 s."Status" AS "StoreStatus",
@@ -56,7 +56,7 @@ class SearchService:
                 AND p."IsActive" = true
                 AND s."Status" = 'Approved'
             ORDER BY
-                distance
+                p."ID", pv."BasePrice" ASC, distance;
             LIMIT 100;
         """
         params = (str(list(query_embedding)),)
