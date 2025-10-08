@@ -1,38 +1,7 @@
 # /app/services/feature_extractor.py
 import math
 from typing import List, Optional
-
-# Rule-based keyword mapping for category detection
-CATEGORY_KEYWORDS = {
-    "food_category_uuid": ["mật ong", "honey", "nước mắm", "fish sauce", "cà phê", "coffee", "bánh", "trà"],
-    "handicraft_category_uuid": ["gốm", "pottery", "thủ công", "handmade", "tranh", "đèn lồng"],
-    "fashion_category_uuid": ["lụa", "silk", "nón lá", "áo dài", "túi cói"],
-    "jewelry_category_uuid": ["vòng tay", "trang sức"],
-}
-
-FEATURE_SCHEMA = [
-    "semantic_similarity",
-    "rating",
-    "review_count",
-    "sale_count",
-    "price_log",
-    "image_count",
-    "is_certified",
-    "store_status_approved",
-    "category_match",
-    "region_match"
-]
-REGION_KEYWORDS = {
-    "Tây Bắc Bộ": ["tây bắc", "sơn la", "hòa bình", "lai châu"],
-    "Đồng bằng sông Hồng": ["hà nội", "miền bắc", "đồng bằng bắc bộ"],
-    "Bắc Trung Bộ": ["huế", "thanh hóa", "nghệ an", "quảng trị", "bắc trung bộ"],
-    "Tây Nguyên": ["tây nguyên", "đà lạt", "lâm đồng", "gia lai", "đắk lắk"],
-    "Đông Nam Bộ": ["sài gòn", "hồ chí minh", "miền đông", "bình phước"],
-    "Đồng bằng sông Cửu Long": [
-        "miền tây", "miền nam", "cần thơ", "an giang", "bến tre",
-        "sóc trăng", "đồng bằng sông cửu long", "phú quốc"
-    ]
-}
+from app.services.search_constants import CATEGORY_KEYWORDS, REGION_KEYWORDS
 
 def detect_query_categories(query: str) -> List[str]:
     """Returns a list of category UUIDs that match the query keywords."""
@@ -100,6 +69,7 @@ def extract_features(product_data: dict, query: str) -> List[float]:
     category_match = check_category_match(product_categories, query_categories)
     features.append(category_match)
 
+    # 7. Region Match
     query_region = detect_query_region(query)
     product_region = product_data.get("region_name")
     region_match = check_region_match(product_region, query_region)

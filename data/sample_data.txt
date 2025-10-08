@@ -7,7 +7,7 @@ INSERT INTO "Province" ("ID", "Name", "Region") VALUES
   (206, 'Bà Rịa - Vũng Tàu', 'Miền Nam'),
   (262, 'Bình Định', 'Miền Trung'),
   (207, 'Gia Lai', 'Miền Trung'),
-  (248, 'Bắc Giang', 'Northern'),
+  (248, 'Bắc Giang', 'Miền Bắc'),
   (245, 'Bắc Kạn', 'Miền Bắc');
 DO $$
 DECLARE

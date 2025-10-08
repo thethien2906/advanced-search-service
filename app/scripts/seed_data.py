@@ -1,7 +1,7 @@
+# /app/scripts/seed_data.py
 import os
 import sys
 import psycopg2
-import json
 from psycopg2 import extras
 from dotenv import load_dotenv
 
@@ -30,11 +30,10 @@ def get_db_connection():
 
 def embed_existing_products():
     """
-    Tạo và cập nhật embedding cho các sản phẩm trong cơ sở dữ liệu dựa trên
-    dữ liệu đã được nạp từ Sample Data.txt.
+    Tạo và CẬP NHẬT LẠI embedding cho TẤT CẢ các sản phẩm trong cơ sở dữ liệu
+    dựa trên logic mới nhất trong EmbeddingService.
     """
     conn = get_db_connection()
-    # Sử dụng cursor factory để trả về kết quả dưới dạng dictionary
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     print("Khởi tạo Dịch vụ Embedding...")
@@ -42,9 +41,11 @@ def embed_existing_products():
     print("Dịch vụ đã được khởi tạo.")
 
     try:
-        print("\n--- Bắt đầu quá trình tạo Embedding cho sản phẩm ---")
+        print("\n--- Bắt đầu quá trình TÁI TẠO Embedding cho toàn bộ sản phẩm ---")
 
         # Câu truy vấn SQL phức tạp để thu thập tất cả dữ liệu cần thiết
+        # **ĐÃ SỬA LỖI:** Xóa bỏ điều kiện 'WHERE p."Embedding" IS NULL' để
+        # đảm bảo tất cả sản phẩm đều được xử lý lại.
         sql_query = """
         SELECT
             p."ID" as product_id,
@@ -56,13 +57,9 @@ def embed_existing_products():
             prov."Name" as province_name,
             prov."Region" as region_name,
             ps."Title" as product_story_title,
-            -- Lấy nội dung câu chuyện sản phẩm (giả sử chỉ có 1)
             (SELECT "ContentData" FROM "ProductStoryContent" WHERE "ProductStoryID" = ps."ID" LIMIT 1) as product_story_detail,
-            -- Lấy nội dung câu chuyện cửa hàng (giả sử chỉ có 1)
             (SELECT "ContentData" FROM "StoreStoryContent" WHERE "StoreStoryID" = ss."ID" LIMIT 1) as store_story_detail,
-            -- Tổng hợp tên các biến thể thành một mảng
             ARRAY(SELECT "VariantName" FROM "ProductVariant" WHERE "ProductID" = p."ID") as variant_names,
-            -- Tổng hợp tên các danh mục thành một mảng
             (
                 SELECT array_agg(pc."Name")
                 FROM "ProductCategory" pc
@@ -72,18 +69,17 @@ def embed_existing_products():
         LEFT JOIN "Store" s ON p."StoreID" = s."ID"
         LEFT JOIN "Province" prov ON p."ProvinceID" = prov."ID"
         LEFT JOIN "ProductStory" ps ON p."ID" = ps."ProductID"
-        LEFT JOIN "StoreStory" ss ON p."StoreID" = ss."StoreID"
-        WHERE p."Embedding" IS NULL;
+        LEFT JOIN "StoreStory" ss ON p."StoreID" = ss."StoreID";
         """
 
         cur.execute(sql_query)
         products_to_embed = cur.fetchall()
 
         if not products_to_embed:
-            print("Tất cả sản phẩm đã có embedding.")
+            print("Không tìm thấy sản phẩm nào để tạo embedding. Vui lòng kiểm tra dữ liệu.")
             return
 
-        print(f"Tìm thấy {len(products_to_embed)} sản phẩm cần tạo embedding...")
+        print(f"Tìm thấy {len(products_to_embed)} sản phẩm cần TÁI TẠO embedding...")
 
         for product_data in products_to_embed:
             product_dict = dict(product_data)
@@ -105,8 +101,8 @@ def embed_existing_products():
                 region_name=product_dict.get('region_name')
             )
 
-            # Tạo embedding vector
-            embedding_vector = embedding_service.create_enhanced_embedding(embedding_request)
+            # Gọi logic create_embedding mới nhất
+            embedding_vector = embedding_service.create_embedding(embedding_request)
             embedding_string = str(embedding_vector)
 
             # Cập nhật sản phẩm với embedding mới
@@ -117,9 +113,8 @@ def embed_existing_products():
             )
             update_cur.close()
 
-
         conn.commit()
-        print(f"\n--- Quá trình tạo Embedding hoàn tất! Đã cập nhật {len(products_to_embed)} sản phẩm. ---")
+        print(f"\n--- Quá trình TÁI TẠO Embedding hoàn tất! Đã cập nhật {len(products_to_embed)} sản phẩm. ---")
 
     except (Exception, psycopg2.DatabaseError) as error:
         print(f"\n--- LỖI: Quá trình tạo embedding thất bại. Đang hoàn tác các thay đổi. ---")
@@ -133,7 +128,6 @@ def embed_existing_products():
         print("Đã đóng kết nối cơ sở dữ liệu.")
 
 if __name__ == "__main__":
-    # Đảm bảo psycopg2.extras được đăng ký
     psycopg2.extras.register_uuid()
     if not DATABASE_URL:
         print("LỖI NGHIÊM TRỌNG: Biến môi trường DATABASE_URL chưa được thiết lập.")

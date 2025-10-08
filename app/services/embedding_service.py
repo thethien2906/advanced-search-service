@@ -2,12 +2,12 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from typing import List
-# Giả sử pydantic_models.py đã được cập nhật với class mới
 from app.models.pydantic_models import EmbeddingRequest
 
 class EmbeddingService:
     """
-    Handles the logic for creating enhanced product embeddings.
+    Handles the logic for creating enhanced product embeddings using contextual
+    prefixes and field weighting to improve semantic relevance.
     """
     def __init__(self):
         """
@@ -21,9 +21,13 @@ class EmbeddingService:
 
     def create_embedding(self, data: EmbeddingRequest) -> List[float]:
         """
-        Creates a high-quality, normalized embedding from multiple product fields.
+        Creates a high-quality, normalized embedding from multiple product fields
+        by building a contextualized "super document".
+
+        This method emphasizes key fields like product name and location by repeating
+        them with descriptive prefixes.
         """
-        # 1. Intelligently truncate the description and story fields
+        # 1. Intelligently truncate long text fields
         truncated_description = ""
         if data.product_description:
             words = data.product_description.split()
@@ -39,47 +43,59 @@ class EmbeddingService:
             words = data.store_story_detail.split()
             truncated_store_story = " ".join(words[:self.max_story_words])
 
-        # 2. Build the "super document" from all available fields
-        # A period helps the model distinguish context between parts
-        parts = [
-            data.product_name,
-            truncated_description,
-            data.product_story_title,
-            truncated_product_story
-        ]
+        # 2. Build the "super document" with contextual prefixes and weighting
+        parts = []
 
-        # Thêm thông tin cửa hàng và triết lý
-        if data.store_name:
-            parts.append(f"Cửa hàng: {data.store_name}")
-        if truncated_store_story:
-            parts.append(f"Câu chuyện cửa hàng: {truncated_store_story}")
+        # --- Emphasize Product Name (Weight x3) ---
+        if data.product_name:
+            parts.append(f"sản phẩm {data.product_name}")
+            parts.append(f"tên {data.product_name}")
+            parts.append(data.product_name) # Add raw name as well
 
-        # Thêm thông tin phân loại (xử lý dạng list)
-        if data.product_category_names:
-            parts.append(f"Danh mục: {', '.join(data.product_category_names)}")
-        if data.product_type_name:
-            parts.append(f"Loại: {data.product_type_name}")
-
-        # Thêm thông tin nguồn gốc và địa lý
-        if data.product_made_by:
-            parts.append(f"Làm từ: {data.product_made_by}")
+        # --- Emphasize Location (Weight x2) ---
         if data.province_name:
-            parts.append(f"Tỉnh: {data.province_name}")
+            parts.append(f"tỉnh {data.province_name}")
+            parts.append(f"xuất xứ {data.province_name}")
         if data.region_name:
-            parts.append(f"Vùng miền: {data.region_name}")
+            parts.append(f"vùng miền {data.region_name}")
+            parts.append(f"đặc sản vùng {data.region_name}")
+            parts.append(f"đặc sản {data.region_name}")
 
-        # Thêm thông tin biến thể (xử lý dạng list)
+        # --- Add other fields with single context prefix ---
+        if data.product_category_names:
+            parts.append(f"danh mục: {', '.join(data.product_category_names)}")
+
+        if truncated_description:
+            parts.append(f"mô tả: {truncated_description}")
+
+        if data.product_story_title:
+            parts.append(f"câu chuyện: {data.product_story_title}")
+        if truncated_product_story:
+            parts.append(f"chi tiết câu chuyện: {truncated_product_story}")
+
+        if data.store_name:
+            parts.append(f"cửa hàng: {data.store_name}")
+        if truncated_store_story:
+            parts.append(f"câu chuyện cửa hàng: {truncated_store_story}")
+
+        if data.product_made_by:
+            parts.append(f"thành phần chính: {data.product_made_by}")
+
         if data.variant_names:
-            parts.append(f"Phiên bản: {', '.join(data.variant_names)}")
+            parts.append(f"phiên bản: {', '.join(data.variant_names)}")
 
-        # Remove any empty parts and join them together
+        # 3. Join all parts into a single, coherent text document
         combined_text = ". ".join(filter(None, parts))
-        print(f"Generated Super Document: {combined_text}")
 
-        # 3. Use the pre-loaded model to generate the embedding
+        # Log the generated document for debugging
+        print("--- Generated Super Document for Embedding ---")
+        print(combined_text)
+        print("---------------------------------------------")
+
+        # 4. Use the pre-loaded model to generate the embedding
         vector = self.model.encode(combined_text)
 
-        # 4. Normalize the vector (L2 normalization)
+        # 5. Normalize the vector (L2 normalization)
         norm = np.linalg.norm(vector)
         if norm == 0: # Avoid division by zero
             return [0.0] * len(vector)

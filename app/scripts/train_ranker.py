@@ -11,8 +11,9 @@ from scipy.spatial.distance import cosine
 
 # Add the app directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from services.feature_extractor import extract_features, FEATURE_SCHEMA
+from services.feature_extractor import extract_features
 from core.config import settings
+from services.search_constants import FEATURE_SCHEMA
 
 # --- CONFIGURATION ---
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '.env')
