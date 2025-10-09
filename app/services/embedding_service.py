@@ -58,8 +58,10 @@ class EmbeddingService:
             parts.append(f"xuất xứ {data.province_name}")
         if data.region_name:
             parts.append(f"vùng miền {data.region_name}")
-            parts.append(f"đặc sản vùng {data.region_name}")
             parts.append(f"đặc sản {data.region_name}")
+        if data.sub_region_name:
+            parts.append(f"khu vực {data.sub_region_name}")
+            parts.append(f"đặc sản {data.sub_region_name}")
 
         # --- Add other fields with single context prefix ---
         if data.product_category_names:

@@ -1,13 +1,16 @@
 # /app/services/search_service.py
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from app.core.config import settings
 from app.services.database import DatabaseHandler
 from app.services.ranker import XGBoostRanker
 from app.services.feature_extractor import extract_features
-# Import the new query expansion map
-from app.services.search_constants import QUERY_EXPANSION_MAP
+from app.services.search_constants import (
+    QUERY_EXPANSION_MAP,
+    REGION_HIERARCHY,
+    SUB_REGION_KEYWORDS
+)
 
 
 class SearchService:
@@ -48,6 +51,27 @@ class SearchService:
         # Return original query if no keywords matched
         return query
 
+    def _get_regions_for_sql_filter(self, query: str) -> Optional[List[str]]:
+        """
+        Nâng cấp logic để phát hiện vùng miền ở cả hai cấp độ.
+        Ưu tiên vùng miền cụ thể trước.
+        """
+        query_lower = query.lower()
+
+        # Cấp 1: Tìm kiếm vùng miền CỤ THỂ (ví dụ: "miền tây" -> "Đồng bằng sông Cửu Long")
+        for sub_region, keywords in SUB_REGION_KEYWORDS.items():
+            if any(keyword in query_lower for keyword in keywords):
+                print(f"Detected specific sub-region: {sub_region}")
+                return [sub_region] # Trả về một danh sách chứa chỉ 1 vùng miền cụ thể
+
+        # Cấp 2: Nếu không thấy, tìm kiếm vùng miền LỚN (ví dụ: "miền nam")
+        for region, sub_regions in REGION_HIERARCHY.items():
+            if region in query_lower:
+                print(f"Detected broad region: {region}, expanding to {sub_regions}")
+                return sub_regions # Trả về danh sách các vùng miền con
+
+        return None # Không tìm thấy vùng miền nào trong truy vấn
+
     def _get_semantic_candidates(self, query: str) -> List[Dict[str, Any]]:
         """
         Retrieves unique semantic search candidates using DISTINCT ON to handle product variants.
@@ -58,59 +82,47 @@ class SearchService:
         expanded_query = self._expand_query(query)
         query_embedding = self.model.encode(expanded_query, normalize_embeddings=True)
 
-        # === START: TỐI ƯU HÓA SQL VỚI DISTINCT ON ===
-        # Lỗi cũ: GROUP BY phức tạp hoặc ORDER BY sai.
-        # Giải pháp: Dùng DISTINCT ON (p."ID") để lấy sản phẩm duy nhất.
-        # ORDER BY p."ID", pv."BasePrice" ASC bên trong để đảm bảo giá được chọn là giá thấp nhất.
-        # ORDER BY distance bên ngoài để sắp xếp kết quả cuối cùng theo độ liên quan.
-        sql_query = """
+        base_sql = """
             SELECT DISTINCT ON (p."ID")
-                p."ID",
-                p."Name",
-                p."Rating",
-                p."ReviewCount",
-                p."SaleCount",
-                p."CategoryID",
-                p."ProductImages",
-                pv."BasePrice" AS "price",
+                p."ID", p."Name", p."Rating", p."ReviewCount", p."SaleCount",
+                p."CategoryID", p."ProductImages", pv."BasePrice" AS "price",
                 s."Status" AS "StoreStatus",
                 EXISTS (SELECT 1 FROM "ProductCertificate" pc WHERE pc."ProductID" = p."ID") AS "IsCertified",
                 (p."Embedding" <=> %s) AS distance,
-                pr."Name" AS "ProvinceName",
-                pr."Region" AS "RegionName"
+                pr."Name" AS "ProvinceName", pr."Region" AS "RegionName", pr."SubRegion" AS "SubRegionName"
             FROM "Product" p
             INNER JOIN "ProductVariant" pv ON p."ID" = pv."ProductID"
             INNER JOIN "InventoryProduct" ip ON pv."ID" = ip."ProductVariantID"
             INNER JOIN "Store" s ON p."StoreID" = s."ID"
             LEFT JOIN "Province" pr ON p."ProvinceID" = pr."ID"
-            WHERE
-                ip."Quantity" > 0
-                AND p."IsActive" = true
-                AND s."Status" = 'Approved'
-            ORDER BY
-                p."ID", pv."BasePrice" ASC;
         """
-        # === END: TỐI ƯU HÓA SQL ===
 
-        params = (str(list(query_embedding)),)
-        db_results = self.db_handler.execute_query_with_retry(sql_query, params)
+        where_clauses = [
+            "ip.\"Quantity\" > 0",
+            "p.\"IsActive\" = true",
+            "s.\"Status\" = 'Approved'"
+        ]
+
+        params = [str(list(query_embedding))]
+        regions_to_filter = self._get_regions_for_sql_filter(query)
+        if regions_to_filter:
+            where_clauses.append('pr."SubRegion" = ANY(%s)')
+            params.append(regions_to_filter)
+            print(f"Applying SQL filter for regions: {regions_to_filter}")
+
+        # Nối các điều kiện WHERE
+        final_sql = base_sql + " WHERE " + " AND ".join(where_clauses) + " ORDER BY p.\"ID\", pv.\"BasePrice\" ASC;"
+        db_results = self.db_handler.execute_query_with_retry(final_sql, tuple(params))
 
         candidates = []
         for row in db_results:
             candidates.append({
-                "id": row[0],
-                "name": row[1],
+                "id": row[0], "name": row[1],
                 "rating": float(row[2]) if row[2] is not None else 0.0,
-                "review_count": row[3],
-                "sale_count": row[4],
-                "category_id": row[5],
-                "product_images": row[6] or [],
-                "price": row[7],
-                "store_status": row[8],
-                "is_certified": row[9],
-                "relevance_score": 1 - row[10],
-                "province_name": row[11],
-                "region_name": row[12]
+                "review_count": row[3], "sale_count": row[4], "category_id": row[5],
+                "product_images": row[6] or [], "price": row[7], "store_status": row[8],
+                "is_certified": row[9], "relevance_score": 1 - row[10],
+                "province_name": row[11], "region_name": row[12], "sub_region_name": row[13]
             })
 
         # Sắp xếp kết quả theo relevance_score trong Python sau khi lấy từ DB

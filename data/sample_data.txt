@@ -1,14 +1,13 @@
 INSERT INTO "User" ("ID", "Email", "Password", "PhoneNumber", "Role", "FirstName", "LastName", "IsActive")
 VALUES ('10000000-0000-0000-0000-000000000001', 'admin@homeland.com', 'adminpassword', '0123456789', 'Admin', 'Admin', 'User', TRUE);
 
-INSERT INTO "Province" ("ID", "Name", "Region") VALUES
-  -- SOUTHERN REGION ()
-  (217, 'An Giang', 'Miền Nam'),
-  (206, 'Bà Rịa - Vũng Tàu', 'Miền Nam'),
-  (262, 'Bình Định', 'Miền Trung'),
-  (207, 'Gia Lai', 'Miền Trung'),
-  (248, 'Bắc Giang', 'Miền Bắc'),
-  (245, 'Bắc Kạn', 'Miền Bắc');
+INSERT INTO "Province" ("ID", "Name", "Region", "SubRegion") VALUES
+  (217, 'An Giang', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (206, 'Bà Rịa - Vũng Tàu', 'Miền Nam', 'Đông Nam Bộ'),
+  (262, 'Bình Định', 'Miền Trung', 'Bắc Trung Bộ'),
+  (207, 'Gia Lai', 'Miền Trung', 'Tây Nguyên'),
+  (248, 'Bắc Giang', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (245, 'Bắc Kạn', 'Miền Bắc', 'Đông Bắc Bộ');
 DO $$
 DECLARE
     -- Biến để lưu trữ các UUID được tạo ra

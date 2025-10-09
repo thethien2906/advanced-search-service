@@ -56,6 +56,7 @@ def embed_existing_products():
             s."StoreName" as store_name,
             prov."Name" as province_name,
             prov."Region" as region_name,
+            prov."SubRegion" as sub_region_name,
             ps."Title" as product_story_title,
             (SELECT "ContentData" FROM "ProductStoryContent" WHERE "ProductStoryID" = ps."ID" LIMIT 1) as product_story_detail,
             (SELECT "ContentData" FROM "StoreStoryContent" WHERE "StoreStoryID" = ss."ID" LIMIT 1) as store_story_detail,
@@ -98,7 +99,8 @@ def embed_existing_products():
                 store_name=product_dict.get('store_name'),
                 store_story_detail=product_dict.get('store_story_detail'),
                 province_name=product_dict.get('province_name'),
-                region_name=product_dict.get('region_name')
+                region_name=product_dict.get('region_name'),
+                sub_region_name=product_dict.get('sub_region_name')
             )
 
             # Gọi logic create_embedding mới nhất

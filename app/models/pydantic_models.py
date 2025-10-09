@@ -59,6 +59,7 @@ class EmbeddingRequest(BaseModel):
     store_story_detail: Optional[str] = None
     province_name: Optional[str] = None
     region_name: Optional[str] = None
+    sub_region_name: Optional[str] = None
 
 class EmbeddingResponse(BaseModel): #
     """

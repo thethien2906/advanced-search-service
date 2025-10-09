@@ -19,7 +19,8 @@ CREATE TABLE "BlackList"(
 CREATE TABLE "Province" (
     "ID" INTEGER PRIMARY KEY,
     "Name" TEXT NOT NULL,
-    "Region" TEXT
+    "Region" TEXT,
+    "SubRegion" TEXT
 );
 
 CREATE TABLE "District" (
