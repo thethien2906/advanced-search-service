@@ -21,24 +21,20 @@ def check_category_match(product_category_ids: List[str], query_category_ids: Li
     return 1 if any(cat in product_category_ids for cat in query_category_ids) else 0
 
 
-def check_region_match(product_region: Optional[str], product_sub_region: Optional[str], query_region: Optional[str]) -> int:
+def check_region_match(product_sub_region: Optional[str], query_sub_region: Optional[str]) -> int:
     """
-    Returns 1 if the product's region OR sub-region matches the detected query region.
-    This allows matching at both general and specific levels.
+    Returns 1 if the product's sub-region matches the detected query sub-region.
     """
-    if not query_region:
-        return 0
-
-    # Check for an exact match at the more specific level (SubRegion)
-    if product_sub_region and product_sub_region == query_region:
+    if query_sub_region and product_sub_region and product_sub_region == query_sub_region:
         return 1
-
-    # If no specific match, check for a match at the broader level (Region)
-    if product_region and product_region == query_region:
-        return 1
-
     return 0
-
+def detect_query_sub_region(query: str) -> Optional[str]:
+    """Returns the sub-region name that matches the query keywords."""
+    query_lower = query.lower()
+    for sub_region, keywords in SUB_REGION_KEYWORDS.items():
+        if any(keyword in query_lower for keyword in keywords):
+            return sub_region
+    return None
 
 def extract_features(product_data: dict, query: str) -> List[float]:
     """
