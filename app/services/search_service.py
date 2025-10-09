@@ -82,14 +82,25 @@ class SearchService:
         expanded_query = self._expand_query(query)
         query_embedding = self.model.encode(expanded_query, normalize_embeddings=True)
 
+        # ======================================================================
+        # SỬA LỖI QUAN TRỌNG: Bổ sung các cột cần thiết cho extract_features
+        # ======================================================================
         base_sql = """
             SELECT DISTINCT ON (p."ID")
-                p."ID", p."Name", p."Rating", p."ReviewCount", p."SaleCount",
-                p."CategoryID", p."ProductImages", pv."BasePrice" AS "price",
+                p."ID",
+                p."Name",
+                p."Rating",
+                p."ReviewCount",
+                p."SaleCount",
+                p."CategoryID",
+                p."ProductImages",
+                pv."BasePrice" AS "price",
                 s."Status" AS "StoreStatus",
                 EXISTS (SELECT 1 FROM "ProductCertificate" pc WHERE pc."ProductID" = p."ID") AS "IsCertified",
                 (p."Embedding" <=> %s) AS distance,
-                pr."Name" AS "ProvinceName", pr."Region" AS "RegionName", pr."SubRegion" AS "SubRegionName"
+                pr."Name" AS "ProvinceName",
+                pr."Region" AS "RegionName",
+                pr."SubRegion" AS "SubRegionName"
             FROM "Product" p
             INNER JOIN "ProductVariant" pv ON p."ID" = pv."ProductID"
             INNER JOIN "InventoryProduct" ip ON pv."ID" = ip."ProductVariantID"
@@ -111,19 +122,28 @@ class SearchService:
             print(f"Applying SQL filter for regions: {regions_to_filter}")
 
         # Nối các điều kiện WHERE
-        final_sql = base_sql + " WHERE " + " AND ".join(where_clauses) + " ORDER BY p.\"ID\", pv.\"BasePrice\" ASC;"
+        final_sql = base_sql + " WHERE " + " AND ".join(where_clauses) + " ORDER BY p.\"ID\", distance ASC;"
         db_results = self.db_handler.execute_query_with_retry(final_sql, tuple(params))
 
         candidates = []
         for row in db_results:
             candidates.append({
-                "id": row[0], "name": row[1],
+                "id": row[0],
+                "name": row[1],
                 "rating": float(row[2]) if row[2] is not None else 0.0,
-                "review_count": row[3], "sale_count": row[4], "category_id": row[5],
-                "product_images": row[6] or [], "price": row[7], "store_status": row[8],
-                "is_certified": row[9], "relevance_score": 1 - row[10],
-                "province_name": row[11], "region_name": row[12], "sub_region_name": row[13]
+                "review_count": row[3],
+                "sale_count": row[4],
+                "category_id": row[5],
+                "product_images": row[6] or [],
+                "price": row[7],
+                "store_status": row[8],
+                "is_certified": row[9],
+                "relevance_score": 1 - row[10], # Cosine similarity
+                "province_name": row[11],
+                "region_name": row[12],
+                "sub_region_name": row[13]
             })
+        # ======================================================================
 
         # Sắp xếp kết quả theo relevance_score trong Python sau khi lấy từ DB
         candidates.sort(key=lambda x: x["relevance_score"], reverse=True)
@@ -134,8 +154,6 @@ class SearchService:
         """
         Performs a pure semantic search. Uses query expansion.
         """
-        # The original query is passed to _get_semantic_candidates,
-        # which internally handles expansion for the embedding part.
         candidates = self._get_semantic_candidates(query)
         return candidates[:limit]
 
@@ -148,13 +166,15 @@ class SearchService:
         # Step 1 & 2: Retrieve initial candidates using semantic search (with expansion)
         candidates = self._get_semantic_candidates(query)
 
+        if not candidates:
+            return []
+
         # Step 3: If ranker model isn't loaded, return results based on semantic score
         if self.ranker.model is None:
             print("WARNING: ML Ranker model not found. Falling back to semantic search results.")
             return candidates[:limit]
 
         # Step 4: Extract features for all candidates.
-        # IMPORTANT: Use the ORIGINAL query for feature extraction to match user intent precisely.
         feature_matrix = np.array([extract_features(p, query) for p in candidates])
 
         # Step 5: Apply ML ranker to get new scores

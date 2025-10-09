@@ -1,3 +1,4 @@
+# /app/scripts/train_ranker.py
 import os
 import sys
 import psycopg2
@@ -5,7 +6,6 @@ import pandas as pd
 import xgboost as xgb
 import numpy as np
 from dotenv import load_dotenv
-from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer
 from scipy.spatial.distance import cosine
 
@@ -41,7 +41,7 @@ def create_labeled_dataset() -> pd.DataFrame:
     print("Connecting to the database to create a labeled dataset...")
     conn = get_db_connection()
 
-    # CẬP NHẬT: Thêm pr."Name" và pr."Region" vào câu SQL
+    # Sửa lỗi: Thêm SubRegion vào câu SQL để train feature region_match
     sql_query = """
     WITH SearchResults AS (
         SELECT
@@ -57,8 +57,7 @@ def create_labeled_dataset() -> pd.DataFrame:
             p."Embedding",
             pv."BasePrice" AS "price",
             s."Status" AS "StoreStatus",
-            pr."Name" AS "ProvinceName", -- LẤY TÊN TỈNH
-            pr."Region" AS "RegionName",   -- LẤY TÊN VÙNG MIỀN
+            pr."SubRegion" AS "SubRegionName", -- LẤY SUBREGION ĐỂ TRAIN
             EXISTS(SELECT 1 FROM "ProductCertificate" pc WHERE pc."ProductID" = p."ID") AS "IsCertified"
         FROM "SearchLog" sl,
         LATERAL jsonb_array_elements_text(sl."RankedProductIDs")
@@ -86,7 +85,6 @@ def create_labeled_dataset() -> pd.DataFrame:
         conn.close()
 
 def calculate_relevance_score(query_embedding: np.ndarray, product_embedding_str: str) -> float:
-    # ... (Giữ nguyên hàm này)
     if not product_embedding_str:
         return 0.0
     try:
@@ -116,11 +114,12 @@ def train_xgboost_model(df: pd.DataFrame):
     print("Starting feature extraction for the training dataset...")
 
     # ======================================================================
-    # SỬA LỖI QUAN TRỌNG TẠI ĐÂY
+    # SỬA LỖI QUAN TRỌNG: Truyền đầy đủ dữ liệu vào extract_features
     # ======================================================================
     feature_vectors = df.apply(
         lambda row: extract_features({
             "relevance_score": row["relevance_score"],
+            "name": row["ProductName"],
             "rating": row["Rating"],
             "review_count": row["ReviewCount"],
             "sale_count": row["SaleCount"],
@@ -129,8 +128,7 @@ def train_xgboost_model(df: pd.DataFrame):
             "is_certified": row["IsCertified"],
             "store_status": row["StoreStatus"],
             "category_id": row["CategoryID"],
-            "province_name": row["ProvinceName"], # THÊM DỮ LIỆU
-            "region_name": row["RegionName"]   # THÊM DỮ LIỆU
+            "sub_region_name": row["SubRegionName"]
         }, row["QueryText"]),
         axis=1
     )
@@ -146,15 +144,22 @@ def train_xgboost_model(df: pd.DataFrame):
     if np.sum(y_train) == 0:
         print("WARNING: No clicks found in the training data. The model may not learn effectively.")
 
+    # Tính toán tỷ lệ giữa số lượng mẫu âm (0) và mẫu dương (1)
+    scale_pos_weight = np.sum(y_train == 0) / np.sum(y_train == 1)
+    print(f"Calculated scale_pos_weight: {scale_pos_weight:.2f}")
+
     dtrain = xgb.DMatrix(X_train, label=y_train, feature_names=FEATURE_SCHEMA)
+
+    # Thêm tham số scale_pos_weight vào đây
     params = {
         'objective': 'binary:logistic',
         'eval_metric': 'logloss',
         'max_depth': 4,
-        'eta': 0.1
+        'eta': 0.1,
+        'scale_pos_weight': scale_pos_weight # <-- THAM SỐ VÀNG
     }
 
-    print("Training the XGBoost ranker...")
+    print("Training the XGBoost ranker with balanced weights...")
     model = xgb.train(params, dtrain, num_boost_round=100)
 
     model.save_model(MODEL_OUTPUT_PATH)

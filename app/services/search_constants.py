@@ -7,6 +7,7 @@ services, making the codebase cleaner and easier to maintain.
 # --- Feature Schema for the ML Ranker ---
 FEATURE_SCHEMA = [
     "semantic_similarity",
+    "unaccented_name_match",
     "rating",
     "review_count",
     "sale_count",
@@ -26,10 +27,17 @@ CATEGORY_KEYWORDS = {
 }
 
 QUERY_EXPANSION_MAP = {
+    # Có dấu
     "nhậu": ["hải sản khô", "mực một nắng", "khô cá", "lai rai", "rượu", "chua cay"],
     "biếu tặng": ["cao cấp", "sang trọng", "hộp quà", "đặc sản làm quà", "quà biếu"],
     "nấu ăn": ["gia vị", "nêm nếm", "nguyên liệu", "nước chấm"],
     "ăn vặt": ["bánh kẹo", "khô", "mứt", "trái cây sấy"],
+
+    # Bổ sung không dấu
+    "nhau": ["hai san kho", "muc mot nang", "kho ca", "lai rai", "ruou", "chua cay"],
+    "bieu tang": ["cao cap", "sang trong", "hop qua", "dac san lam qua", "qua bieu"],
+    "nau an": ["gia vi", "nem nem", "nguyen lieu", "nuoc cham"],
+    "an vat": ["banh keo", "kho", "mut", "trai cay say"],
 }
 
 SUB_REGION_KEYWORDS = {
