@@ -8,10 +8,10 @@ import numpy as np
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from scipy.spatial.distance import cosine
-
+from typing import List
 # Add the app directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from services.feature_extractor import extract_features
+from services.feature_extractor import extract_features, remove_vietnamese_diacritics
 from core.config import settings
 from services.search_constants import FEATURE_SCHEMA
 
@@ -34,14 +34,27 @@ def get_db_connection():
         print(f"FATAL: Could not connect to the database: {e}")
         sys.exit(1)
 
-def create_labeled_dataset() -> pd.DataFrame:
+def load_all_categories_for_training(conn) -> List[str]:
+    """Tải tất cả tên danh mục để sử dụng trong quá trình trích xuất đặc trưng."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT "Name" FROM "ProductCategory" WHERE "IsActive" = true;')
+            # Chuyển đổi tên danh mục sang chữ thường và không dấu để dễ so khớp
+            categories = [remove_vietnamese_diacritics(row[0].lower()) for row in cur.fetchall()]
+            return categories
+    except Exception as e:
+        print(f"ERROR: Could not load categories for training: {e}")
+        return []
+
+def create_labeled_dataset(conn) -> pd.DataFrame:
     """
     Creates a labeled dataset by joining search logs with product and click data.
     """
     print("Connecting to the database to create a labeled dataset...")
-    conn = get_db_connection()
 
-    # Sửa lỗi: Thêm SubRegion vào câu SQL để train feature region_match
+    # ======================================================================
+    # THAY ĐỔI LỚN: SQL join để lấy tên danh mục thay vì ID
+    # ======================================================================
     sql_query = """
     WITH SearchResults AS (
         SELECT
@@ -52,12 +65,17 @@ def create_labeled_dataset() -> pd.DataFrame:
             p."Rating",
             p."ReviewCount",
             p."SaleCount",
-            p."CategoryID",
+            -- Lấy mảng tên danh mục
+            (
+                SELECT array_agg(pc."Name")
+                FROM "ProductCategory" pc
+                WHERE pc."ID"::text IN (SELECT jsonb_array_elements_text(p."CategoryID"))
+            ) as "CategoryNames",
             p."ProductImages",
             p."Embedding",
             pv."BasePrice" AS "price",
             s."Status" AS "StoreStatus",
-            pr."SubRegion" AS "SubRegionName", -- LẤY SUBREGION ĐỂ TRAIN
+            pr."RegionSpecified" AS "RegionSpecifiedName",
             EXISTS(SELECT 1 FROM "ProductCertificate" pc WHERE pc."ProductID" = p."ID") AS "IsCertified"
         FROM "SearchLog" sl,
         LATERAL jsonb_array_elements_text(sl."RankedProductIDs")
@@ -81,8 +99,6 @@ def create_labeled_dataset() -> pd.DataFrame:
     except Exception as e:
         print(f"ERROR: Failed to fetch training data: {e}")
         return pd.DataFrame()
-    finally:
-        conn.close()
 
 def calculate_relevance_score(query_embedding: np.ndarray, product_embedding_str: str) -> float:
     if not product_embedding_str:
@@ -96,7 +112,7 @@ def calculate_relevance_score(query_embedding: np.ndarray, product_embedding_str
         return 0.0
 
 
-def train_xgboost_model(df: pd.DataFrame):
+def train_xgboost_model(df: pd.DataFrame, all_categories: List[str]):
     if df.empty:
         print("WARNING: Training data is empty. Skipping model training.")
         return
@@ -127,9 +143,9 @@ def train_xgboost_model(df: pd.DataFrame):
             "product_images": row["ProductImages"],
             "is_certified": row["IsCertified"],
             "store_status": row["StoreStatus"],
-            "category_id": row["CategoryID"],
-            "sub_region_name": row["SubRegionName"]
-        }, row["QueryText"]),
+            "category_names": row["CategoryNames"], # Sử dụng tên danh mục
+            "sub_region_name": row["RegionSpecifiedName"]
+        }, row["QueryText"], all_categories), # Truyền danh sách danh mục
         axis=1
     )
     # ======================================================================
@@ -143,6 +159,8 @@ def train_xgboost_model(df: pd.DataFrame):
     print(f"Number of clicked items in training data: {np.sum(y_train)}")
     if np.sum(y_train) == 0:
         print("WARNING: No clicks found in the training data. The model may not learn effectively.")
+        # Thoát nếu không có dữ liệu dương để tránh lỗi chia cho 0
+        return
 
     # Tính toán tỷ lệ giữa số lượng mẫu âm (0) và mẫu dương (1)
     scale_pos_weight = np.sum(y_train == 0) / np.sum(y_train == 1)
@@ -169,8 +187,17 @@ def train_xgboost_model(df: pd.DataFrame):
     print("Feature Importance (Gain):", feature_importance)
 
 def main():
-    labeled_data = create_labeled_dataset()
-    train_xgboost_model(labeled_data)
+    conn = get_db_connection()
+    try:
+        all_categories = load_all_categories_for_training(conn)
+        if not all_categories:
+            print("Could not load categories, aborting training.")
+            return
+
+        labeled_data = create_labeled_dataset(conn)
+        train_xgboost_model(labeled_data, all_categories)
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     main()

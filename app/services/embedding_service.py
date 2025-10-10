@@ -73,11 +73,13 @@ class EmbeddingService:
             parts.append(f"khu vực {data.sub_region_name}")
             parts.append(f"đặc sản {data.sub_region_name}")
 
+        # --- Emphasize Product Description (Weight x2) ---
+        if truncated_description:
+            parts.append(f"mô tả: {truncated_description}")
+            parts.append(f"{truncated_description}")
         # --- Add other fields with single context prefix ---
         if data.product_category_names:
             parts.append(f"danh mục: {', '.join(data.product_category_names)}")
-        if truncated_description:
-            parts.append(f"mô tả: {truncated_description}")
         if data.product_story_title:
             parts.append(f"câu chuyện: {data.product_story_title}")
         if truncated_product_story:
@@ -88,6 +90,8 @@ class EmbeddingService:
             parts.append(f"câu chuyện cửa hàng: {truncated_store_story}")
         if data.product_made_by:
             parts.append(f"thành phần chính: {data.product_made_by}")
+        if data.product_type_name:
+            parts.append(f"{data.product_made_by}")
         if data.variant_names:
             parts.append(f"phiên bản: {', '.join(data.variant_names)}")
 

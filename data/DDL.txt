@@ -20,7 +20,7 @@ CREATE TABLE "Province" (
     "ID" INTEGER PRIMARY KEY,
     "Name" TEXT NOT NULL,
     "Region" TEXT,
-    "SubRegion" TEXT
+    "RegionSpecified" TEXT
 );
 
 CREATE TABLE "District" (
@@ -37,7 +37,7 @@ CREATE TABLE "Ward" (
     CONSTRAINT fk_District_ward FOREIGN KEY ("DistrictID") REFERENCES "District"("ID") ON DELETE CASCADE
 );
 
--- -----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------- 
 -- Core User Tables
 -- -----------------------------------------------------------------------------
 CREATE TABLE "User" (
@@ -56,9 +56,11 @@ CREATE TABLE "User" (
     "IsActive" BOOLEAN DEFAULT TRUE,
     "Note" VARCHAR(100),
     "DateOfBirth" DATE,
+	 "EditBy" UUID,
     "IsPermission" BOOLEAN DEFAULT TRUE,
     "CreatedAt" TIMESTAMPTZ,
-    "UpdatedAt" TIMESTAMPTZ
+    "UpdatedAt" TIMESTAMPTZ,
+     CONSTRAINT fk_staff_edit FOREIGN KEY ("EditBy") REFERENCES "User"("ID") ON DELETE SET NULL
 );
 
 CREATE TABLE "Address" (
@@ -84,7 +86,7 @@ CREATE TABLE "Seller" (
     "BusinessName" VARCHAR(255),
     "BusinessLicense" VARCHAR(255),
     "IdentifyCard" TEXT,
-    "TaxCode" VARCHAR(100),
+    "TaxCode" VARCHAR(100), 
     "IdentifyFrontImage" TEXT,
     "IdentifyBackImage" TEXT,
     "SellerStatus" TEXT DEFAULT 'Pending',
@@ -104,7 +106,7 @@ CREATE TABLE "Staff" (
     CONSTRAINT fk_staff_user FOREIGN KEY ("UserID") REFERENCES "User"("ID") ON DELETE CASCADE
 );
 
--- -----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------- 
 -- Store and Product Catalog Tables
 -- -----------------------------------------------------------------------------
 CREATE TABLE "Store" (
@@ -126,13 +128,13 @@ CREATE TABLE "Store" (
     "ApprovedBy" UUID,
     "vendorApplicationImageUrl" JSONB,
     "StaffNotes" TEXT,
-    "StaffFeedback" TEXT,
     "StaffImage" TEXT,
     "SubmittedDate" TIMESTAMPTZ,
     "DecisionDate" TIMESTAMPTZ,
     "CreatedAt" TIMESTAMPTZ,
     "UpdatedAt" TIMESTAMPTZ,
     CONSTRAINT fk_store_seller FOREIGN KEY ("SellerID") REFERENCES "Seller"("UserID") ON DELETE CASCADE,
+    CONSTRAINT fk_store_approvedby FOREIGN KEY ("ApprovedBy") REFERENCES "User"("ID") ON DELETE SET NULL,
     CONSTRAINT unique_seller_per_store UNIQUE ("SellerID") -- Ràng buộc 1-1
 );
 
@@ -155,7 +157,7 @@ CREATE TABLE "Product" (
     "VideoPreviewUrl" TEXT,
     "VideoPlayBackUrl" TEXT,
     "VideoFallBackUrl" TEXT,
-    "CategoryID" JSONB,
+    "CategoryID" JSONB, 
     "MadeBy" TEXT,
     "SaleCount" INTEGER DEFAULT 0,
     "Rating" NUMERIC(3, 2) DEFAULT 0.00,
@@ -164,11 +166,15 @@ CREATE TABLE "Product" (
     "TypeProduct" TEXT,
     "Status" TEXT,
     "Note" TEXT,
+    "ApprovedBy" UUID,
+    "EditById" UUID,
     "Embedding" VECTOR(768),
     "CreatedAt" TIMESTAMPTZ,
     "UpdatedAt" TIMESTAMPTZ,
     CONSTRAINT fk_product_store FOREIGN KEY ("StoreID") REFERENCES "Store"("ID") ON DELETE CASCADE,
-    CONSTRAINT fk_product_province FOREIGN KEY ("ProvinceID") REFERENCES "Province"("ID") ON DELETE SET NULL
+    CONSTRAINT fk_product_approvedby FOREIGN KEY ("ApprovedBy") REFERENCES "User"("ID") ON DELETE SET NULL,
+    CONSTRAINT fk_product_editby FOREIGN KEY ("EditById") REFERENCES "User"("ID") ON DELETE SET NULL,
+    CONSTRAINT fk_product_province FOREIGN KEY ("ProvinceID") REFERENCES "Province"("ID") ON DELETE SET NULL 
 );
 
 CREATE TABLE "ProductVariant" (
@@ -187,12 +193,13 @@ CREATE TABLE "ProductVariant" (
     "UpdatedAt" TIMESTAMPTZ,
     CONSTRAINT fk_variant_product FOREIGN KEY ("ProductID") REFERENCES "Product"("ID") ON DELETE CASCADE
 );
-
-CREATE TABLE "InventoryProduct" (
+  
+CREATE TABLE "InventoryProduct" ( 
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "ProductVariantID" UUID UNIQUE NOT NULL,
     "Quantity" INTEGER NOT NULL DEFAULT 0 CHECK ("Quantity" >= 0),
-    "ReservedQuantity" INTEGER NOT NULL DEFAULT 0 CHECK ("ReservedQuantity" >= 0), --stock cho combo
+    "ReservedCOD" INTEGER NOT NULL DEFAULT 0, -- COD mua thì lưu vào đây đẻ giam
+     "ReservedCombo" INTEGER,
     "IsActive" BOOLEAN DEFAULT TRUE,
     "CreatedAt" TIMESTAMPTZ,
     "UpdatedAt" TIMESTAMPTZ,
@@ -205,6 +212,7 @@ CREATE TABLE "Combo"(
     "ProvinceID" INTEGER,
     "ThumbnailURL" TEXT,
     "Description" TEXT,
+    "DisabledReason" TEXT,
     "Status" TEXT,
     "StaffNote" TEXT,
     "IsActive" BOOLEAN DEFAULT TRUE,
@@ -227,15 +235,12 @@ CREATE TABLE "ComboItem"(
 CREATE TABLE "ProductCertificate" (
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "ProductID" UUID NOT NULL,
-    "ReviewedByStaffID" UUID,
     "ImageURL" TEXT NOT NULL,
     "Status" TEXT,
-    "StaffNotes" TEXT,
     "SubmittedDate" TIMESTAMPTZ,
     "DecisionDate" TIMESTAMPTZ,
     "UpdatedAt" TIMESTAMPTZ,
-    CONSTRAINT fk_cert_product FOREIGN KEY ("ProductID") REFERENCES "Product"("ID") ON DELETE CASCADE,
-    CONSTRAINT fk_cert_staff FOREIGN KEY ("ReviewedByStaffID") REFERENCES "Staff"("UserID") ON DELETE SET NULL
+    CONSTRAINT fk_cert_product FOREIGN KEY ("ProductID") REFERENCES "Product"("ID") ON DELETE CASCADE
 );
 
 CREATE TABLE "ProductStory" (
@@ -264,7 +269,7 @@ CREATE TABLE "ProductStoryContent" (
     CONSTRAINT fk_prodstorycontent_story FOREIGN KEY ("ProductStoryID") REFERENCES "ProductStory"("ID") ON DELETE CASCADE
 );
 
--- -----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------- 
 -- Order and Transaction Tables
 -- -----------------------------------------------------------------------------
 CREATE TABLE "Cart" (
@@ -301,8 +306,8 @@ CREATE TABLE "Order" (
     "FromPhone" TEXT,
     "FromAddress" TEXT,
     "PaymentType" TEXT,
-    "UserID" UUID,
-    "ToAddressId" UUID,
+    "UserID" UUID,  
+    "ToAddressId" UUID, 
     "ToName" TEXT,
     "ToAddress" TEXT,
     "TotalLength" INTEGER NOT NULL,
@@ -343,10 +348,14 @@ CREATE TABLE "OrderItem" (
     "CreatedAt" TIMESTAMPTZ,
     "UpdatedAt" TIMESTAMPTZ,
     "IsActive" BOOLEAN DEFAULT TRUE,
+    "DiscountAmount" INT DEFAULT 0,
+    
     CONSTRAINT fk_orderitem_order FOREIGN KEY ("OrderID") REFERENCES "Order"("ID") ON DELETE CASCADE,
     CONSTRAINT fk_orderitem_combo FOREIGN KEY ("ComboID") REFERENCES "Combo"("ID") ON DELETE CASCADE,
     CONSTRAINT fk_orderitem_variant FOREIGN KEY ("ProductInventoryID") REFERENCES "InventoryProduct"("ID") ON DELETE SET NULL
 );
+
+
 
 CREATE TABLE "OrderHistory"(
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -373,7 +382,7 @@ CREATE TABLE "Transaction" (
     CONSTRAINT fk_transaction_order FOREIGN KEY ("OrderID") REFERENCES "Order"("ID") ON DELETE CASCADE
 );
 
--- -----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------- 
 -- Platform Content and Support Tables
 -- -----------------------------------------------------------------------------
 CREATE TABLE "ProductReview" (
@@ -424,7 +433,7 @@ CREATE TABLE "BlogCategory" (
     "Name" TEXT UNIQUE NOT NULL,
     "IsActive" BOOLEAN DEFAULT TRUE,
     "CreatedAt" TIMESTAMPTZ,
-    "UpdatedAt" TIMESTAMPTZ
+    "UpdatedAt" TIMESTAMPTZ 
 );
 
 CREATE TABLE "Blog" (
@@ -450,7 +459,7 @@ CREATE TABLE "Document" (
     "IsPublished" BOOLEAN DEFAULT FALSE,
     "Type" TEXT,
     "CreatedAt" TIMESTAMPTZ,
-    "UpdatedAt" TIMESTAMPTZ
+    "UpdatedAt" TIMESTAMPTZ 
 );
 
 CREATE TABLE "Form" (
@@ -493,7 +502,7 @@ CREATE TABLE "SearchClickLog" (
     CONSTRAINT fk_clicklog_product FOREIGN KEY ("ProductID") REFERENCES "Product"("ID") ON DELETE CASCADE
 );
 
--- -----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------- 
 -- Communication and Notification Tables
 -- -----------------------------------------------------------------------------
 CREATE TABLE "Room" (
@@ -517,7 +526,7 @@ CREATE TABLE "Message" (
     CONSTRAINT fk_message_sender FOREIGN KEY ("SenderID") REFERENCES "User"("ID") ON DELETE CASCADE
 );
 
--- -----------------------------------------------------------------------------
+-- ----------------------------------------------------------------------------- 
 -- Promotion Tables (Simplified: Global & Product only)
 -- -----------------------------------------------------------------------------
 CREATE TABLE "Promotion" (
@@ -525,32 +534,29 @@ CREATE TABLE "Promotion" (
     "Type" TEXT NOT NULL, -- 'Global' | 'Product'
     "Title" TEXT NOT NULL,
     "Description" TEXT,
-
+    "StoreId" UUID, 
     -- Loại khuyến mãi: percentage | fixed_amount | freeship
-    "DiscountType" TEXT NOT NULL,
-    "DiscountValue" NUMERIC(10,2) NOT NULL,
-
+    "DiscountType" TEXT NOT NULL,  
+    "DiscountValue" NUMERIC(10,2) ,
+    "MinValueDiscount" INTEGER DEFAULT 0,
     -- Quản lý thời gian
     "StartDate" TIMESTAMPTZ NOT NULL,
     "EndDate" TIMESTAMPTZ NOT NULL,
-
+    
     -- Quản lý số lượng & giới hạn
-    "MaxQuantity" INTEGER,              -- Tổng số lượt được phát hành (NULL = không giới hạn)
+    "MaxQuantity" INTEGER DEFAULT 0,              -- Tổng số lượt được phát hành (NULL = không giới hạn)
     "UsedQuantity" INTEGER DEFAULT 0,   -- Số lượt đã dùng
     "MaxPerUser" INTEGER DEFAULT 1,     -- Mỗi user được dùng bao nhiêu lần
-
+    
     -- Trạng thái
     "IsActive" BOOLEAN DEFAULT TRUE,
-
+    
     -- Thông tin hệ thống
     "CreatedAt" TIMESTAMPTZ DEFAULT NOW(),
     "UpdatedAt" TIMESTAMPTZ DEFAULT NOW(),
-
-    CONSTRAINT chk_promotion_type CHECK ("Type" IN ('Global', 'Product')),
-    CONSTRAINT chk_discount_value CHECK ("DiscountValue" > 0),
-    CONSTRAINT chk_quantity CHECK ("MaxQuantity" IS NULL OR "MaxQuantity" >= 0),
-    CONSTRAINT chk_max_per_user CHECK ("MaxPerUser" > 0)
-);
+    CONSTRAINT fk_promo_ FOREIGN KEY ("StoreId") REFERENCES "Store"("ID") ON DELETE cascade
+    
+); 
 
 CREATE TABLE "PromotionProduct" (
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -558,14 +564,15 @@ CREATE TABLE "PromotionProduct" (
     "ProductID" UUID NOT NULL,
     "IsActive" BOOLEAN DEFAULT TRUE,
     CONSTRAINT fk_promo_product FOREIGN KEY ("PromotionID") REFERENCES "Promotion"("ID") ON DELETE CASCADE,
-    CONSTRAINT fk_promo_product_product FOREIGN KEY ("ProductID") REFERENCES "Product"("ID") ON DELETE CASCADE
+    CONSTRAINT fk_promo_product_product FOREIGN KEY ("ProductID") REFERENCES "Product"("ID") ON DELETE cascade
 );
 
 CREATE TABLE "PromotionUser" (
     "ID" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     "PromotionID" UUID NOT NULL,
     "UserID" UUID NOT NULL,
-    "IsRedeemed" BOOLEAN DEFAULT FALSE, -- user đã dùng chưa
+    "Quantity"INTEGER DEFAULT 1,
+   "IsActive" BOOLEAN DEFAULT TRUE,
     "RedeemedAt" TIMESTAMPTZ,
     "CreatedAt" TIMESTAMPTZ DEFAULT NOW(),
     "UpdatedAt" TIMESTAMPTZ DEFAULT NOW(),
@@ -574,3 +581,19 @@ CREATE TABLE "PromotionUser" (
     CONSTRAINT unique_user_promo UNIQUE ("PromotionID", "UserID")
 );
 CREATE INDEX idx_cart_user_store ON "Cart"("UserID", "StoreID", "IsActive");
+
+CREATE TABLE "OrderItemPromotion" (
+    "OrderItemID" UUID NOT NULL,
+    "PromotionID" UUID NOT NULL,
+    "PromotionType" TEXT NOT NULL, -- 'Global' | 'Product'
+    "Title" TEXT NOT NULL,
+    "Description" TEXT,
+    "DiscountType" TEXT NOT NULL,
+    "DiscountValue" NUMERIC(10,2) NOT NULL,
+    "DiscountAmount" INT NOT NULL,
+    "CreatedAt" TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT pk_orderitempromotion PRIMARY KEY ("OrderItemID", "PromotionID"),
+    CONSTRAINT fk_orderitempromotion_orderitem FOREIGN KEY ("OrderItemID") REFERENCES "OrderItem"("ID") ON DELETE CASCADE,
+    CONSTRAINT fk_orderitempromotion_promotion FOREIGN KEY ("PromotionID") REFERENCES "Promotion"("ID") ON DELETE SET NULL
+);
+

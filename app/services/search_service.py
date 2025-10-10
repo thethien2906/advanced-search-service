@@ -5,7 +5,7 @@ import numpy as np
 from app.core.config import settings
 from app.services.database import DatabaseHandler
 from app.services.ranker import XGBoostRanker
-from app.services.feature_extractor import extract_features
+from app.services.feature_extractor import extract_features, remove_vietnamese_diacritics
 from app.services.search_constants import (
     QUERY_EXPANSION_MAP,
     REGION_HIERARCHY,
@@ -22,6 +22,7 @@ class SearchService:
         self.db_handler = DatabaseHandler(settings.DATABASE_URL)
         self.model = None
         self.ranker = XGBoostRanker() # Initialize the ranker wrapper
+        self.all_categories = self._load_categories() # Tải danh mục khi khởi tạo
 
         try:
             print(f"Loading sentence-transformers model: {settings.MODEL_NAME}...")
@@ -30,6 +31,22 @@ class SearchService:
         except Exception as e:
             print(f"CRITICAL: Failed to load sentence-transformers model: {e}")
             raise
+
+    def _load_categories(self) -> List[str]:
+        """
+        Tải tất cả tên danh mục đang hoạt động từ cơ sở dữ liệu.
+        """
+        print("Loading product categories from database...")
+        try:
+            sql = 'SELECT "Name" FROM "ProductCategory" WHERE "IsActive" = true;'
+            results = self.db_handler.execute_query_with_retry(sql)
+            # Chuyển đổi tên danh mục sang chữ thường và không dấu để dễ so khớp
+            categories = [remove_vietnamese_diacritics(row[0].lower()) for row in results]
+            print(f"Loaded {len(categories)} active categories.")
+            return categories
+        except Exception as e:
+            print(f"ERROR: Could not load categories from database: {e}")
+            return []
 
     def _expand_query(self, query: str) -> str:
         """
@@ -83,7 +100,7 @@ class SearchService:
         query_embedding = self.model.encode(expanded_query, normalize_embeddings=True)
 
         # ======================================================================
-        # SỬA LỖI QUAN TRỌNG: Bổ sung các cột cần thiết cho extract_features
+        # THAY ĐỔI LỚN: Truy vấn SQL để lấy tên danh mục thay vì ID
         # ======================================================================
         base_sql = """
             SELECT DISTINCT ON (p."ID")
@@ -92,7 +109,12 @@ class SearchService:
                 p."Rating",
                 p."ReviewCount",
                 p."SaleCount",
-                p."CategoryID",
+                -- Lấy mảng tên danh mục
+                (
+                    SELECT array_agg(pc."Name")
+                    FROM "ProductCategory" pc
+                    WHERE pc."ID"::text IN (SELECT jsonb_array_elements_text(p."CategoryID"))
+                ) as "CategoryNames",
                 p."ProductImages",
                 pv."BasePrice" AS "price",
                 s."Status" AS "StoreStatus",
@@ -100,7 +122,7 @@ class SearchService:
                 (p."Embedding" <=> %s) AS distance,
                 pr."Name" AS "ProvinceName",
                 pr."Region" AS "RegionName",
-                pr."SubRegion" AS "SubRegionName"
+                pr."RegionSpecified" AS "RegionSpecifiedName"
             FROM "Product" p
             INNER JOIN "ProductVariant" pv ON p."ID" = pv."ProductID"
             INNER JOIN "InventoryProduct" ip ON pv."ID" = ip."ProductVariantID"
@@ -117,7 +139,7 @@ class SearchService:
         params = [str(list(query_embedding))]
         regions_to_filter = self._get_regions_for_sql_filter(query)
         if regions_to_filter:
-            where_clauses.append('pr."SubRegion" = ANY(%s)')
+            where_clauses.append('pr."RegionSpecified" = ANY(%s)')
             params.append(regions_to_filter)
             print(f"Applying SQL filter for regions: {regions_to_filter}")
 
@@ -133,7 +155,7 @@ class SearchService:
                 "rating": float(row[2]) if row[2] is not None else 0.0,
                 "review_count": row[3],
                 "sale_count": row[4],
-                "category_id": row[5],
+                "category_names": row[5] or [], # Thay đổi ở đây
                 "product_images": row[6] or [],
                 "price": row[7],
                 "store_status": row[8],
@@ -175,7 +197,8 @@ class SearchService:
             return candidates[:limit]
 
         # Step 4: Extract features for all candidates.
-        feature_matrix = np.array([extract_features(p, query) for p in candidates])
+        # Truyền danh sách all_categories vào hàm extract_features
+        feature_matrix = np.array([extract_features(p, query, self.all_categories) for p in candidates])
 
         # Step 5: Apply ML ranker to get new scores
         ml_scores = self.ranker.predict(feature_matrix)

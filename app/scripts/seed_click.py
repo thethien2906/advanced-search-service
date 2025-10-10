@@ -12,7 +12,7 @@ from psycopg2 import extras
 
 # Thêm đường dẫn thư mục gốc
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from services.search_constants import SUB_REGION_KEYWORDS
+from services.search_constants import SUB_REGION_KEYWORDS, GIFT_INTENT_KEYWORDS, GIFT_CATEGORY_NAMES
 # Thêm hàm remove_vietnamese_diacritics để so sánh tên không dấu
 from services.feature_extractor import remove_vietnamese_diacritics
 
@@ -32,20 +32,36 @@ def get_db_connection():
         sys.exit(1)
 
 def get_product_details(cursor, product_ids):
-    """Lấy thông tin chi tiết của các sản phẩm từ ID."""
+    """Lấy thông tin chi tiết của các sản phẩm từ ID, bao gồm cả giá."""
     if not product_ids:
         return {}
     string_ids = [str(pid) for pid in product_ids]
     query = """
-    SELECT p."ID", p."Name", pr."SubRegion"
+    SELECT
+        p."ID",
+        p."Name",
+        pr."RegionSpecified",
+        p."Rating",
+        MIN(pv."BasePrice") as "price",
+        array_agg(DISTINCT pc."Name") as "category_names"
     FROM "Product" p
     LEFT JOIN "Province" pr ON p."ProvinceID" = pr."ID"
+    JOIN "ProductVariant" pv ON p."ID" = pv."ProductID"
+    LEFT JOIN "ProductCategory" pc ON pc."ID"::text IN (SELECT jsonb_array_elements_text(p."CategoryID"))
     WHERE p."ID"::text = ANY(%s)
+    GROUP BY p."ID", p."Name", pr."RegionSpecified", p."Rating"
     """
+
     cursor.execute(query, (string_ids,))
     product_map = {}
     for row in cursor.fetchall():
-        product_map[row[0]] = {"name": row[1], "sub_region": row[2]}
+        product_map[row[0]] = {
+            "name": row[1],
+            "sub_region": row[2],
+            "rating": float(row[3] or 0.0),
+            "price": row[4],
+            "category_names": row[5] or []
+        }
     return product_map
 
 def generate_clicks():
@@ -117,8 +133,49 @@ def generate_clicks():
                             product_to_click = pid_str
                             click_reason = f"Khớp vùng miền '{detected_sub_region}' trong top 3"
                             break
+            # Quy tắc 3: LOGIC LỰA CHỌN QUÀ TẶNG
+            if not product_to_click and any(keyword in query_text.lower() for keyword in GIFT_INTENT_KEYWORDS):
 
-            # Quy tắc 3 (Mới): Nếu vẫn không tìm thấy, click ngẫu nhiên vào top 2 kết quả đầu tiên
+                gift_candidates = []
+                max_score = 0
+
+                for pid_str in ranked_ids[:5]:
+                    pid_uuid = uuid.UUID(pid_str)
+                    product = product_details_map.get(pid_uuid)
+
+                    if not product:
+                        continue
+
+                    current_score = 0
+
+                    if any(cat_name in GIFT_CATEGORY_NAMES for cat_name in product.get("category_names", [])):
+                        current_score += 1
+
+                    if product.get("price", 0) > 100000:
+                        current_score += 1
+
+                    if product.get("rating", 0) >= 4.8:
+                        current_score += 1
+
+                    # Thu thập tất cả các ứng viên và điểm số của họ
+                    if current_score > 0:
+                        gift_candidates.append({'id': pid_str, 'product': product, 'score': current_score})
+
+                if gift_candidates:
+                    # Tìm điểm số cao nhất
+                    max_score = max(candidate['score'] for candidate in gift_candidates)
+
+                    # Lọc ra tất cả các ứng viên có điểm số cao nhất
+                    best_candidates = [candidate for candidate in gift_candidates if candidate['score'] == max_score]
+
+                    # Chọn ngẫu nhiên một trong số những ứng viên tốt nhất
+                    chosen_one = random.choice(best_candidates)
+
+                    product_to_click = chosen_one['id']
+                    clicked_product_name = chosen_one['product']['name']
+                    click_reason = f"Lựa chọn quà tặng (Điểm: {max_score}): '{clicked_product_name}'"
+
+            # Quy tắc 4: Nếu vẫn không tìm thấy, click ngẫu nhiên vào top 2 kết quả đầu tiên
             # Điều này giúp tạo thêm nhãn positive, giả định rằng kết quả đầu thường tốt
             if not product_to_click and ranked_ids:
                  # 30% cơ hội click vào kết quả đầu tiên

@@ -1,16 +1,106 @@
+-- =================================================================
+
+-- =================================================================
+
+-- -----------------------------------------------------------------
+-- NHÓM 1: THỰC PHẨM & ĐẶC SẢN
+-- -----------------------------------------------------------------
+INSERT INTO "ProductCategory" ("ID", "Name", "Description", "IsActive", "CreatedAt", "UpdatedAt") VALUES
+('a1000000-0000-0000-0000-000000000001', 'Cà phê, Trà & Đồ uống', 'Tuyển tập các loại cà phê, trà và thức uống thủ công từ những vùng trồng trọt danh tiếng của Việt Nam.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000002', 'Các loại Hạt & Ngũ cốc', 'Tổng hợp các loại hạt và ngũ cốc bổ dưỡng, được thu hoạch tự nhiên và chế biến thủ công.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000003', 'Trái cây & Nông sản', 'Những sản phẩm từ trái cây và nông sản tươi ngon nhất, bao gồm cả dạng tươi, sấy khô và chế biến.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000004', 'Gia vị & Sốt đặc trưng', 'Khám phá bộ sưu tập gia vị và nước sốt độc đáo, là linh hồn của ẩm thực Việt.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000005', 'Bánh, Mứt & Kẹo truyền thống', 'Những món quà vặt ngọt ngào, gợi nhớ hương vị tuổi thơ và lễ hội.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000006', 'Thực phẩm chế biến & Khô', 'Các loại đặc sản khô và thực phẩm chế biến sẵn từ khắp mọi miền, như hải sản khô, thịt gác bếp, bún miến khô.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000007', 'Mật ong & Sản phẩm từ ong', 'Mật ong nguyên chất và các sản phẩm từ ong được khai thác từ những cánh rừng và vườn hoa tự nhiên.', TRUE, NOW(), NOW());
+
+-- -----------------------------------------------------------------
+-- NHÓM 2: THỦ CÔNG MỸ NGHỆ & QUÀ TẶNG
+-- -----------------------------------------------------------------
+INSERT INTO "ProductCategory" ("ID", "Name", "Description", "IsActive", "CreatedAt", "UpdatedAt") VALUES
+('a1000000-0000-0000-0000-000000000008', 'Gốm sứ nghệ thuật', 'Các sản phẩm gốm sứ được chế tác thủ công bởi những nghệ nhân tài hoa từ các làng nghề truyền thống.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000009', 'Sản phẩm từ Vải & Lụa tơ tằm', 'Khăn, áo, và các vật phẩm trang trí làm từ lụa tơ tằm, thổ cẩm và vải gai nhuộm chàm tự nhiên.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000010', 'Sản phẩm Mây, Tre & Cói đan', 'Những vật dụng hàng ngày và đồ trang trí được đan lát tỉ mỉ từ mây, tre, cói, lục bình.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000011', 'Đồ gỗ & Điêu khắc nghệ thuật', 'Các tác phẩm điêu khắc, đồ trang trí và vật dụng từ gỗ tự nhiên, được chạm trổ tinh xảo.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000012', 'Sơn mài truyền thống', 'Sản phẩm sơn mài độc đáo với kỹ thuật chế tác công phu, tạo nên những vật phẩm có giá trị nghệ thuật cao.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000013', 'Trang sức & Phụ kiện thủ công', 'Các mẫu trang sức và phụ kiện được thiết kế và chế tác thủ công từ bạc, đồng, đá tự nhiên.', TRUE, NOW(), NOW()),
+('a1000000-0000-0000-0000-000000000014', 'Đồ trang trí & Quà tặng', 'Những món đồ trang trí nhỏ xinh, quà tặng ý nghĩa được làm thủ công từ nhiều chất liệu đa dạng.', TRUE, NOW(), NOW());
 INSERT INTO "User" ("ID", "Email", "Password", "PhoneNumber", "Role", "FirstName", "LastName", "IsActive")
 VALUES ('10000000-0000-0000-0000-000000000001', 'admin@homeland.com', 'adminpassword', '0123456789', 'Admin', 'Admin', 'User', TRUE);
 
-INSERT INTO "Province" ("ID", "Name", "Region", "SubRegion") VALUES
-  (217, 'An Giang', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
-  (206, 'Bà Rịa - Vũng Tàu', 'Miền Nam', 'Đông Nam Bộ'),
-  (262, 'Bình Định', 'Miền Trung', 'Bắc Trung Bộ'),
-  (207, 'Gia Lai', 'Miền Trung', 'Tây Nguyên'),
-  (248, 'Bắc Giang', 'Miền Bắc', 'Đồng bằng sông Hồng'),
-  (245, 'Bắc Kạn', 'Miền Bắc', 'Đông Bắc Bộ');
+
+INSERT INTO "Province" ("ID", "Name", "Region", "RegionSpecified") VALUES
+  (217, 'An Giang', 'Miền Nam', 'Đồng bằng sông Cửu Long'), ------
+  (206, 'Bà Rịa - Vũng Tàu', 'Miền Nam', 'Đông Nam Bộ'), ------
+  (205, 'Bình Dương', 'Miền Nam', 'Đông Nam Bộ'), ------
+  (239, 'Bình Phước', 'Miền Nam', 'Đông Nam Bộ'), ------
+  (258, 'Bình Thuận', 'Miền Trung', 'Duyên hải Nam Trung Bộ'), ------
+  (262, 'Bình Định', 'Miền Trung', 'Duyên hải Nam Trung Bộ'), ------
+  (253, 'Bạc Liêu', 'Miền Nam', 'Đồng bằng sông Cửu Long'), ------
+  (248, 'Bắc Giang', 'Miền Bắc', 'Đông Bắc Bộ'), ------
+  (245, 'Bắc Kạn', 'Miền Bắc', 'Đông Bắc Bộ'), ------
+  (249, 'Bắc Ninh', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (213, 'Bến Tre', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (246, 'Cao Bằng', 'Miền Bắc', 'Đông Bắc Bộ'),
+  (252, 'Cà Mau', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (220, 'Cần Thơ', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (207, 'Gia Lai', 'Miền Trung', 'Tây Nguyên'), ------
+  (227, 'Hà Giang', 'Miền Bắc', 'Đông Bắc Bộ'),
+  (232, 'Hà Nam', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (201, 'Hà Nội', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (236, 'Hà Tĩnh', 'Miền Trung', 'Bắc Trung Bộ'),
+  (267, 'Hòa Bình', 'Miền Bắc', 'Tây Bắc Bộ'),
+  (268, 'Hưng Yên', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (225, 'Hải Dương', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (224, 'Hải Phòng', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (250, 'Hậu Giang', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (202, 'Hồ Chí Minh', 'Miền Nam', 'Đông Nam Bộ'),
+  (208, 'Khánh Hòa', 'Miền Trung', 'Duyên hải Nam Trung Bộ'),
+  (219, 'Kiên Giang', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (259, 'Kon Tum', 'Miền Trung', 'Tây Nguyên'),
+  (264, 'Lai Châu', 'Miền Bắc', 'Tây Bắc Bộ'),
+  (211, 'Long An', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (269, 'Lào Cai', 'Miền Bắc', 'Tây Bắc Bộ'),
+  (209, 'Lâm Đồng', 'Miền Trung', 'Tây Nguyên'),
+  (247, 'Lạng Sơn', 'Miền Bắc', 'Đông Bắc Bộ'),
+  (231, 'Nam Định', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (235, 'Nghệ An', 'Miền Trung', 'Bắc Trung Bộ'),
+  (233, 'Ninh Bình', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (261, 'Ninh Thuận', 'Miền Trung', 'Duyên hải Nam Trung Bộ'),
+  (229, 'Phú Thọ', 'Miền Bắc', 'Đông Bắc Bộ'),
+  (260, 'Phú Yên', 'Miền Trung', 'Duyên hải Nam Trung Bộ'),
+  (237, 'Quảng Bình', 'Miền Trung', 'Bắc Trung Bộ'),
+  (243, 'Quảng Nam', 'Miền Trung', 'Duyên hải Nam Trung Bộ'),
+  (242, 'Quảng Ngãi', 'Miền Trung', 'Duyên hải Nam Trung Bộ'),
+  (230, 'Quảng Ninh', 'Miền Bắc', 'Đông Bắc Bộ'),
+  (238, 'Quảng Trị', 'Miền Trung', 'Bắc Trung Bộ'),
+  (218, 'Sóc Trăng', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (266, 'Sơn La', 'Miền Bắc', 'Tây Bắc Bộ'),
+  (234, 'Thanh Hóa', 'Miền Trung', 'Bắc Trung Bộ'),
+  (226, 'Thái Bình', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (244, 'Thái Nguyên', 'Miền Bắc', 'Đông Bắc Bộ'),
+  (223, 'Thừa Thiên Huế', 'Miền Trung', 'Bắc Trung Bộ'),
+  (212, 'Tiền Giang', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (214, 'Trà Vinh', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (228, 'Tuyên Quang', 'Miền Bắc', 'Đông Bắc Bộ'),
+  (240, 'Tây Ninh', 'Miền Nam', 'Đông Nam Bộ'),
+  (215, 'Vĩnh Long', 'Miền Nam', 'Đồng bằng sông Cửu Long'),
+  (221, 'Vĩnh Phúc', 'Miền Bắc', 'Đồng bằng sông Hồng'),
+  (263, 'Yên Bái', 'Miền Bắc', 'Tây Bắc Bộ'),
+  (265, 'Điện Biên', 'Miền Bắc', 'Tây Bắc Bộ'),
+  (203, 'Đà Nẵng', 'Miền Trung', 'Duyên hải Nam Trung Bộ'),
+  (210, 'Đắk Lắk', 'Miền Trung', 'Tây Nguyên'),
+  (241, 'Đắk Nông', 'Miền Trung', 'Tây Nguyên'),
+  (204, 'Đồng Nai', 'Miền Nam', 'Đông Nam Bộ'),
+  (216, 'Đồng Tháp', 'Miền Nam', 'Đồng bằng sông Cửu Long')
+ON CONFLICT ("ID") DO UPDATE
+SET
+  "Region" = EXCLUDED."Region",
+  "RegionSpecified" = EXCLUDED."RegionSpecified";
+
 DO $$
 DECLARE
-    -- Biến để lưu trữ các UUID được tạo ra
+    -- SỬA LỖI 1: Đã thay thế các ký tự khoảng trắng không hợp lệ bằng dấu cách thông thường.
     seller_user_id UUID;
     store_id UUID;
     product1_id UUID;
@@ -20,8 +110,9 @@ DECLARE
 BEGIN
     -- Bước 2: Tạo User và Seller
     -- Chèn vào bảng User và lấy ID vừa tạo lưu vào biến seller_user_id
-    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "PhoneNumber", "Role", "FirstName", "LastName", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), 'baynui.ag@gmail.com', '$2b$10$hashedpassword.newuser.ag', 'Nam', '0918765432', 'Seller', 'Văn', 'Bảy', 'https://example.com/avatar_baynui.jpg', TRUE, '1985-07-19', NOW(), NOW())
+    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "FirstName", "LastName", "PhoneNumber", "Role", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
+    -- SỬA LỖI 2: Đã sắp xếp lại thứ tự các giá trị cho đúng với cột.
+    VALUES (gen_random_uuid(), 'baynui.ag@gmail.com', '$2b$10$hashedpassword.newuser.ag', 'Nam', 'Văn', 'Bảy', '0918765432', 'Seller', 'https://example.com/avatar_baynui.jpg', TRUE, '1985-07-19', NOW(), NOW())
     RETURNING "ID" INTO seller_user_id;
 
     -- Sử dụng seller_user_id để chèn vào bảng Seller
@@ -31,8 +122,6 @@ BEGIN
     -- Bước 3: Tạo Store
     -- Chèn vào bảng Store và lấy ID vừa tạo lưu vào biến store_id
     INSERT INTO "Store" ("ID", "SellerID", "StoreName", "Province", "District", "Ward", "ProvinceID", "DistrictID", "WardID", "Address", "LogoURL", "CoverImageURL", "Status", "SubmittedDate", "DecisionDate", "CreatedAt", "UpdatedAt")
-    -- **Đã chỉnh sửa:** Cung cấp giá trị cho DistrictID và WardID.
-    -- Sử dụng 692 làm DistrictID cho 'Châu Đốc' và 27247 làm WardID cho 'Phường Núi Sam' (ví dụ)
     VALUES (gen_random_uuid(), seller_user_id, 'Mắm Châu Đốc & Đặc Sản Bảy Núi', 'An Giang', 'Châu Đốc', 'Phường Núi Sam', 217, 1, 1, '99 Đường Vòng Núi Sam, Phường Núi Sam, Thành phố Châu Đốc', 'https://example.com/logo_baynui.jpg', 'https://example.com/cover_baynui.jpg', 'Approved', NOW() - INTERVAL '20 days', NOW() - INTERVAL '18 days', NOW() - INTERVAL '25 days', NOW())
     RETURNING "ID" INTO store_id;
 
@@ -40,47 +129,41 @@ BEGIN
 
     -- Sản phẩm 1: Mắm Thái Châu Đốc
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 217, 'Mắm Thái Chay Đu Đủ Châu Đốc', 'Mắm Thái chay làm từ đu đủ giòn sần sật, kết hợp với các loại gia vị tạo nên hương vị chua ngọt đậm đà, là đặc sản trứ danh của Châu Đốc, An Giang.', '["https://example.com/mam_thai_1.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Việt Nam', 150, 4.9, 55, TRUE, 'Normal', 'Active', NOW() - INTERVAL '15 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 217, 'Mắm Thái Chay Đu Đủ Châu Đốc', 'Mắm Thái chay làm từ đu đủ giòn sần sật, kết hợp với các loại gia vị tạo nên hương vị chua ngọt đậm đà, là đặc sản trứ danh của Châu Đốc, An Giang.', '["https://example.com/mam_thai_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000006"]'::jsonb, 'Đặc Sản', 150, 4.9, 55, TRUE, 'Normal', 'Active', NOW() - INTERVAL '15 days', NOW())
     RETURNING "ID" INTO product1_id;
-
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), product1_id, 'Hũ 500g', 15, 10, 10, 500, 75000, 7500, 82500, TRUE, NOW(), NOW())
     RETURNING "ID" INTO variant_id;
     INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), variant_id, 180, TRUE, NOW(), NOW());
-
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), product1_id, 'Hũ 1kg', 20, 12, 12, 1000, 140000, 14000, 154000, TRUE, NOW(), NOW())
     RETURNING "ID" INTO variant_id;
     INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), variant_id, 90, TRUE, NOW(), NOW());
-
     INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), product1_id, 'Mắm Thái Châu Đốc: Tinh hoa ẩm thực vùng biên giới', 'https://example.com/story_mamthai.jpg', TRUE, NOW() - INTERVAL '9 days', NOW());
 
     -- Sản phẩm 2: Đường Thốt Nốt
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 217, 'Đường Thốt Nốt Nguyên Chất Tịnh Biên', 'Đường thốt nốt nấu thủ công từ nước nhụy hoa thốt nốt, có vị ngọt thanh, thơm lừng đặc trưng của vùng Tịnh Biên, An Giang. Dùng để nấu ăn, làm bánh, pha nước đều ngon.', '["https://example.com/duong_thot_not_1.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Việt Nam', 210, 5.0, 72, TRUE, 'Normal', 'Active', NOW() - INTERVAL '14 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 217, 'Đường Thốt Nốt Nguyên Chất Tịnh Biên', 'Đường thốt nốt nấu thủ công từ nước nhụy hoa thốt nốt, có vị ngọt thanh, thơm lừng đặc trưng của vùng Tịnh Biên, An Giang. Dùng để nấu ăn, làm bánh, pha nước đều ngon.', '["https://example.com/duong_thot_not_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000004"]'::jsonb, 'Đặc Sản', 210, 5.0, 72, TRUE, 'Normal', 'Active', NOW() - INTERVAL '14 days', NOW())
     RETURNING "ID" INTO product2_id;
-
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), product2_id, '500g', 18, 12, 8, 500, 60000, 6000, 66000, TRUE, NOW(), NOW())
     RETURNING "ID" INTO variant_id;
     INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), variant_id, 250, TRUE, NOW(), NOW());
-
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), product2_id, '1kg', 22, 15, 10, 1000, 110000, 11000, 121000, TRUE, NOW(), NOW())
     RETURNING "ID" INTO variant_id;
     INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), variant_id, 120, TRUE, NOW(), NOW());
-
     INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), product2_id, 'Giọt ngọt từ cây thốt nốt Bảy Núi huyền bí', 'https://example.com/story_thotnot.jpg', TRUE, NOW() - INTERVAL '8 days', NOW());
 
     -- Sản phẩm 3: Khô Cá Tra Phồng
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 217, 'Khô Cá Tra Phồng Biển Hồ', 'Khô cá tra phồng được làm từ cá tra tươi ngon của vùng Biển Hồ, An Giang. Thịt cá sau khi phơi khô có vị ngọt, dai, chiên lên phồng rộp, giòn tan.', '["https://example.com/kho_ca_tra_1.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000004"]'::jsonb, 'Việt Nam', 95, 4.8, 35, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 217, 'Khô Cá Tra Phồng Biển Hồ', 'Khô cá tra phồng được làm từ cá tra tươi ngon của vùng Biển Hồ, An Giang. Thịt cá sau khi phơi khô có vị ngọt, dai, chiên lên phồng rộp, giòn tan.', '["https://example.com/kho_ca_tra_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000006"]'::jsonb, 'Đặc Sản', 95, 4.8, 35, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
     RETURNING "ID" INTO product3_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -88,7 +171,6 @@ BEGIN
     RETURNING "ID" INTO variant_id;
     INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), variant_id, 100, TRUE, NOW(), NOW());
-
     INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), product3_id, 'Khô cá tra phồng: Món quà từ dòng sông Hậu', 'https://example.com/story_khocatra.jpg', TRUE, NOW() - INTERVAL '7 days', NOW());
 
@@ -97,7 +179,6 @@ BEGIN
     VALUES (gen_random_uuid(), store_id, 'Hương vị An Giang từ làng nghề truyền thống Châu Đốc', 'https://example.com/story_angiang.jpg', TRUE, NOW() - INTERVAL '10 days', NOW());
 
 END $$;
-
 DO $$
 DECLARE
     seller_user_id UUID;
@@ -111,8 +192,9 @@ BEGIN
     -- ProvinceID: 206, ProvinceName: 'Bà Rịa - Vũng Tàu'
 
     -- Bước 2: Tạo User và Seller
-    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "PhoneNumber", "Role", "FirstName", "LastName", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), 'thanhdat.brvt@gmail.com', '$2b$10$hashedpassword.brvt', 'Nam', '0908999000', 'Seller', 'Trần', 'Thanh Đạt', 'https://example.com/avatar_brvt.jpg', TRUE, '1987-06-10', NOW(), NOW())
+    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "FirstName", "LastName", "PhoneNumber", "Role", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
+    -- SỬA LỖI: Thêm các giá trị còn thiếu (PhoneNumber, Role) và sắp xếp lại cho đúng thứ tự cột.
+    VALUES (gen_random_uuid(), 'thanhdat.brvt@gmail.com', '$2b$10$hashedpassword.brvt', 'Nam', 'Trần', 'Thanh Đạt', '0987654321', 'Seller', 'https://example.com/avatar_brvt.jpg', TRUE, '1987-06-10', NOW(), NOW())
     RETURNING "ID" INTO seller_user_id;
 
     INSERT INTO "Seller" ("UserID", "ApprovedBy", "BusinessName", "BusinessLicense", "IdentifyCard", "TaxCode", "IdentifyFrontImage", "IdentifyBackImage", "SellerStatus", "ApprovedAt", "CreatedAt", "UpdatedAt")
@@ -127,7 +209,7 @@ BEGIN
 
     -- 1. Mực Một Nắng Vũng Tàu
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 206, 'Mực Một Nắng Vũng Tàu', 'Mực tươi đánh bắt từ vùng biển Vũng Tàu, phơi một nắng giữ nguyên vị ngọt, dai, hương biển đậm đà.', '["https://example.com/muc_mot_nang.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000004"]'::jsonb, 'Ngư dân Vũng Tàu', 200, 4.9, 85, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 206, 'Mực Một Nắng Vũng Tàu', 'Mực tươi đánh bắt từ vùng biển Vũng Tàu, phơi một nắng giữ nguyên vị ngọt, dai, hương biển đậm đà.', '["https://example.com/muc_mot_nang.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000006"]'::jsonb, 'Ngư dân Vũng Tàu', 200, 4.9, 85, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
     RETURNING "ID" INTO product1_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -147,7 +229,7 @@ BEGIN
 
     -- 2. Nước Mắm Truyền Thống Long Hải
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 206, 'Nước Mắm Cốt Cá Cơm Long Hải', 'Được ủ từ cá cơm tươi và muối biển trong chum gỗ truyền thống hơn 12 tháng, nước mắm Long Hải nổi tiếng vị mặn mòi, đậm đà.', '["https://example.com/nuocmam_longhai.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Cơ sở Long Hải', 320, 5.0, 110, TRUE, 'Normal', 'Active', NOW() - INTERVAL '10 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 206, 'Nước Mắm Cốt Cá Cơm Long Hải', 'Được ủ từ cá cơm tươi và muối biển trong chum gỗ truyền thống hơn 12 tháng, nước mắm Long Hải nổi tiếng vị mặn mòi, đậm đà.', '["https://example.com/nuocmam_longhai.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000004"]'::jsonb, 'Cơ sở Long Hải', 320, 5.0, 110, TRUE, 'Normal', 'Active', NOW() - INTERVAL '10 days', NOW())
     RETURNING "ID" INTO product2_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -161,7 +243,7 @@ BEGIN
 
     -- 3. Cá Thu Một Nắng Bà Rịa
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 206, 'Cá Thu Một Nắng Bà Rịa', 'Cá thu tươi được làm sạch, ướp nhẹ muối rồi phơi một nắng để giữ vị béo, thơm và săn chắc. Món ngon đặc sản vùng biển Bà Rịa.', '["https://example.com/cathu_motnang.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000004"]'::jsonb, 'Ngư dân Bà Rịa', 180, 4.8, 60, TRUE, 'Normal', 'Active', NOW() - INTERVAL '9 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 206, 'Cá Thu Một Nắng Bà Rịa', 'Cá thu tươi được làm sạch, ướp nhẹ muối rồi phơi một nắng để giữ vị béo, thơm và săn chắc. Món ngon đặc sản vùng biển Bà Rịa.', '["https://example.com/cathu_motnang.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000006"]'::jsonb, 'Ngư dân Bà Rịa', 180, 4.8, 60, TRUE, 'Normal', 'Active', NOW() - INTERVAL '9 days', NOW())
     RETURNING "ID" INTO product3_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -178,7 +260,6 @@ BEGIN
     VALUES (gen_random_uuid(), store_id, 'Hành trình giữ gìn hương vị biển Bà Rịa - Vũng Tàu', 'https://example.com/story_brvt.jpg', TRUE, NOW() - INTERVAL '10 days', NOW());
 
 END $$;
-
 DO $$
 DECLARE
     seller_user_id UUID;
@@ -189,8 +270,9 @@ DECLARE
     variant_id UUID;
 BEGIN
     -- Bước 2: Tạo User và Seller cho Bắc Giang
-    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "PhoneNumber", "Role", "FirstName", "LastName", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), 'lucngan.bg@gmail.com', '$2b$10$hashedpassword.newuser.bg', 'Nam', '0915123456', 'Seller', 'Trần', 'Vải', 'https://example.com/avatar_vailucngan.jpg', TRUE, '1982-06-10', NOW(), NOW())
+    -- SỬA LỖI: Sắp xếp lại thứ tự các giá trị và thêm giá trị cho cột "Role".
+    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "FirstName", "LastName", "PhoneNumber", "Role", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), 'lucngan.bg@gmail.com', '$2b$10$hashedpassword.newuser.bg', 'Nam', 'Trần', 'Vải', '0915123456', 'Seller', 'https://example.com/avatar_vailucngan.jpg', TRUE, '1982-06-10', NOW(), NOW())
     RETURNING "ID" INTO seller_user_id;
 
     INSERT INTO "Seller" ("UserID", "ApprovedBy", "BusinessName", "BusinessLicense", "IdentifyCard", "TaxCode", "IdentifyFrontImage", "IdentifyBackImage", "SellerStatus", "ApprovedAt", "CreatedAt", "UpdatedAt")
@@ -205,7 +287,7 @@ BEGIN
 
     -- 1. Vải thiều Lục Ngạn
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 248, 'Vải Thiều Lục Ngạn Bắc Giang', 'Vải thiều Lục Ngạn có vỏ mỏng, cùi dày, vị ngọt thanh, thơm đặc trưng, được trồng theo tiêu chuẩn VietGAP.', '["https://example.com/vai_lucngan_1.jpg","https://example.com/vai_lucngan_2.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000002"]'::jsonb, 'Hợp Tác Xã Vải Thiều Lục Ngạn', 500, 4.9, 120, TRUE, 'Normal', 'Active', NOW() - INTERVAL '15 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 248, 'Vải Thiều Lục Ngạn Bắc Giang', 'Vải thiều Lục Ngạn có vỏ mỏng, cùi dày, vị ngọt thanh, thơm đặc trưng, được trồng theo tiêu chuẩn VietGAP.', '["https://example.com/vai_lucngan_1.jpg","https://example.com/vai_lucngan_2.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000003"]'::jsonb, 'Hợp Tác Xã Vải Thiều Lục Ngạn', 500, 4.9, 120, TRUE, 'Normal', 'Active', NOW() - INTERVAL '15 days', NOW())
     RETURNING "ID" INTO product1_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -225,7 +307,7 @@ BEGIN
 
     -- 2. Mật ong rừng Yên Thế
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 248, 'Mật Ong Rừng Yên Thế', 'Mật ong rừng nguyên chất thu hoạch từ vùng núi Yên Thế, sánh vàng, thơm dịu và bổ dưỡng.', '["https://example.com/matong_yenthe_1.jpg","https://example.com/matong_yenthe_2.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Hộ gia đình Yên Thế', 180, 4.8, 65, TRUE, 'Normal', 'Active', NOW() - INTERVAL '14 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 248, 'Mật Ong Rừng Yên Thế', 'Mật ong rừng nguyên chất thu hoạch từ vùng núi Yên Thế, sánh vàng, thơm dịu và bổ dưỡng.', '["https://example.com/matong_yenthe_1.jpg","https://example.com/matong_yenthe_2.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000007"]'::jsonb, 'Hộ gia đình Yên Thế', 180, 4.8, 65, TRUE, 'Normal', 'Active', NOW() - INTERVAL '14 days', NOW())
     RETURNING "ID" INTO product2_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -239,7 +321,7 @@ BEGIN
 
     -- 3. Chè xanh Thái Nguyên trồng tại Sơn Động Bắc Giang
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 248, 'Chè Xanh Sơn Động', 'Chè xanh trồng trên vùng núi Sơn Động, Bắc Giang. Lá chè được hái thủ công, sấy theo phương pháp truyền thống, hương vị đậm đà, hậu ngọt thanh.', '["https://example.com/chexanh_sondong_1.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Hợp tác xã Sơn Động Xanh', 220, 4.9, 72, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 248, 'Chè Xanh Sơn Động', 'Chè xanh trồng trên vùng núi Sơn Động, Bắc Giang. Lá chè được hái thủ công, sấy theo phương pháp truyền thống, hương vị đậm đà, hậu ngọt thanh.', '["https://example.com/chexanh_sondong_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000001"]'::jsonb, 'Hợp tác xã Sơn Động Xanh', 220, 4.9, 72, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
     RETURNING "ID" INTO product3_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -254,6 +336,172 @@ BEGIN
     -- Câu chuyện cửa hàng
     INSERT INTO "StoreStory" ("ID", "StoreID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), store_id, 'Từ vườn đồi Lục Ngạn đến bàn ăn Việt - Hành trình gìn giữ hương vị Bắc Giang', 'https://example.com/story_bacgiang_store.jpg', TRUE, NOW() - INTERVAL '10 days', NOW());
+END $$;
+DO $$
+DECLARE
+    seller_user_id UUID;
+    store_id UUID;
+    product1_id UUID;
+    product2_id UUID;
+    product3_id UUID;
+    variant_id UUID;
+BEGIN
+    -- Bước 1: Thông tin tỉnh Bắc Kạn
+    -- ProvinceID = 245, Region = 'Northern'
+
+    -- Bước 2: User & Seller
+    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "FirstName", "LastName", "PhoneNumber", "Role", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
+    -- SỬA LỖI: Đã thêm giá trị 'Seller' cho cột "Role" và sắp xếp lại đúng thứ tự các giá trị.
+    VALUES (gen_random_uuid(), 'nongnghiepbk@gmail.com', '$2b$10$hashedpassword.newuser.bk', 'Nam', 'Hoàng', 'Văn Bình', '0978123456', 'Seller', 'https://example.com/avatar_bk.jpg', TRUE, '1984-06-18', NOW(), NOW())
+    RETURNING "ID" INTO seller_user_id;
+
+    INSERT INTO "Seller" ("UserID", "ApprovedBy", "BusinessName", "BusinessLicense", "IdentifyCard", "TaxCode", "IdentifyFrontImage", "IdentifyBackImage", "SellerStatus", "ApprovedAt", "CreatedAt", "UpdatedAt")
+    VALUES (seller_user_id, '10000000-0000-0000-0000-000000000001', 'HTX Miến Dong Na Rì Bắc Kạn', 'BLBK112233', '074198765432', 'TXBK87654321', 'https://example.com/id_front_bk.jpg', 'https://example.com/id_back_bk.jpg', 'Approved', NOW() - INTERVAL '25 days', NOW() - INTERVAL '28 days', NOW());
+
+    -- Bước 3: Store
+    INSERT INTO "Store" ("ID", "SellerID", "StoreName", "Province", "District", "Ward", "ProvinceID", "DistrictID", "WardID", "Address", "LogoURL", "CoverImageURL", "Status", "SubmittedDate", "DecisionDate", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), seller_user_id, 'Miến Dong Na Rì - Đặc Sản Bắc Kạn', 'Bắc Kạn', 'Na Rì', 'Xã Cư Lễ', 245, 1, 1, 'Thôn Khuổi Slưa, xã Cư Lễ, huyện Na Rì, Bắc Kạn', 'https://example.com/logo_nari.jpg', 'https://example.com/cover_nari.jpg', 'Approved', NOW() - INTERVAL '25 days', NOW() - INTERVAL '23 days', NOW() - INTERVAL '30 days', NOW())
+    RETURNING "ID" INTO store_id;
+
+    -- Bước 4: Sản phẩm
+
+    -- 1. Miến Dong Na Rì
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 245, 'Miến Dong Na Rì Bắc Kạn', 'Miến dong Na Rì được làm từ củ dong riềng trồng trên đất đỏ bazan, sợi miến dai, giòn, thơm nhẹ tự nhiên, là đặc sản nổi tiếng của Bắc Kạn.', '["https://example.com/mien_dong_nari1.jpg","https://example.com/mien_dong_nari2.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000006"]'::jsonb, 'HTX Miến Dong Na Rì', 120, 4.9, 42, TRUE, 'Normal', 'Active', NOW() - INTERVAL '15 days', NOW())
+    RETURNING "ID" INTO product1_id;
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, '500g', 20, 10, 5, 500, 65000, 6500, 71500, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 180, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, '1kg', 25, 15, 8, 1000, 120000, 12000, 132000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 90, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, 'Từ củ dong đến sợi miến vàng óng - niềm tự hào Na Rì', 'https://example.com/story_miendong_bk.jpg', TRUE, NOW() - INTERVAL '8 days', NOW());
+
+    -- 2. Mật Ong Hoa Rừng Ba Bể
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 245, 'Mật Ong Hoa Rừng Ba Bể', 'Mật ong nguyên chất được khai thác từ hoa rừng Ba Bể, vị ngọt thanh, thơm dịu, mang đậm hương vị núi rừng Bắc Kạn.', '["https://example.com/matong_babe1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000007"]'::jsonb, 'Người Dân Tộc Tày Ba Bể', 85, 4.8, 27, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
+    RETURNING "ID" INTO product2_id;
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, 'Chai 500ml', 15, 10, 20, 500, 160000, 16000, 176000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 150, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, 'Chai 1 lít', 18, 12, 25, 1000, 290000, 29000, 319000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 70, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, 'Giọt mật ngọt lành từ rừng Ba Bể', 'https://example.com/story_matong_bk.jpg', TRUE, NOW() - INTERVAL '7 days', NOW());
+
+    -- 3. Hồng Không Hạt Chợ Đồn
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 245, 'Hồng Không Hạt Chợ Đồn', 'Hồng chín mọng, không hạt, được trồng tại vùng núi cao Chợ Đồn, có vị ngọt dịu, giòn dai tự nhiên.', '["https://example.com/hong_chodon1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000003"]'::jsonb, 'Nông Trại Chợ Đồn', 95, 4.7, 33, TRUE, 'Normal', 'Active', NOW() - INTERVAL '10 days', NOW())
+    RETURNING "ID" INTO product3_id;
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product3_id, 'Hộp 1kg', 20, 15, 10, 1000, 110000, 11000, 121000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 100, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product3_id, 'Hồng không hạt Chợ Đồn – ngọt lành giữa non cao Bắc Kạn', 'https://example.com/story_hong_bk.jpg', TRUE, NOW() - INTERVAL '6 days', NOW());
+
+    -- Bước 5: Câu chuyện cửa hàng
+    INSERT INTO "StoreStory" ("ID", "StoreID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 'Giữ gìn hương vị truyền thống Bắc Kạn – câu chuyện HTX Miến Dong Na Rì', 'https://example.com/story_store_bk.jpg', TRUE, NOW() - INTERVAL '9 days', NOW());
+
+END $$;
+DO $$
+DECLARE
+    -- SỬA LỖI 1: Đã thay thế các ký tự khoảng trắng không hợp lệ.
+    seller_user_id UUID;
+    store_id UUID;
+    product1_id UUID;
+    product2_id UUID;
+    product3_id UUID;
+    variant_id UUID;
+BEGIN
+    -- Bước 2: Tạo User và Seller
+    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "FirstName", "LastName", "PhoneNumber", "Role", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
+    -- SỬA LỖI 2: Đã sắp xếp lại toàn bộ giá trị cho đúng cột và thêm các giá trị bị thiếu.
+    VALUES (gen_random_uuid(), 'tomtepbaclieu@gmail.com', '$2b$10$hashedpassword.baclieu', 'Nam', 'Võ', 'Thanh', '0909123456', 'Seller', 'https://example.com/avatar_thanh.jpg', TRUE, '1980-02-12', NOW(), NOW())
+    RETURNING "ID" INTO seller_user_id;
+
+    -- Sử dụng seller_user_id để chèn vào bảng Seller
+    INSERT INTO "Seller" ("UserID", "ApprovedBy", "BusinessName", "BusinessLicense", "IdentifyCard", "TaxCode", "IdentifyFrontImage", "IdentifyBackImage", "SellerStatus", "ApprovedAt", "CreatedAt", "UpdatedAt")
+    VALUES (seller_user_id, '10000000-0000-0000-0000-000000000001', 'Cơ Sở Tôm Khô Gia Truyền Bạc Liêu', 'BL998877665', '002567890123', 'TX1234567891', 'https://example.com/id_front_bl.jpg', 'https://example.com/id_back_bl.jpg', 'Approved', NOW() - INTERVAL '15 days', NOW() - INTERVAL '20 days', NOW());
+
+    -- Bước 3: Tạo Store
+    INSERT INTO "Store" ("ID", "SellerID", "StoreName", "Province", "District", "Ward", "ProvinceID", "DistrictID", "WardID", "Address", "LogoURL", "CoverImageURL", "Status", "SubmittedDate", "DecisionDate", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), seller_user_id, 'Hải Sản Bạc Liêu - Mắm Tôm Khô', 'Bạc Liêu', 'Thành phố Bạc Liêu', 'Phường 2', 253, 1, 1, '123 Cao Văn Lầu, Phường 2, Thành phố Bạc Liêu', 'https://example.com/logo_bl.jpg', 'https://example.com/cover_bl.jpg', 'Approved', NOW() - INTERVAL '15 days', NOW() - INTERVAL '12 days', NOW() - INTERVAL '20 days', NOW())
+    RETURNING "ID" INTO store_id;
+
+    -- Bước 4 & 5: Tạo Sản phẩm, Biến thể, Tồn kho và Câu chuyện
+
+    -- Sản phẩm 1: Tôm Khô
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 253, 'Tôm Khô Bạc Liêu Loại 1', 'Tôm khô được làm từ tôm đất tươi sống, đánh bắt tại vùng biển Bạc Liêu. Sản phẩm có màu đỏ tự nhiên, thịt tôm dai ngọt, thơm đậm đà.', '["https://example.com/tom_kho_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000006"]'::jsonb, 'Tôm đất tươi', 85, 4.8, 30, TRUE, 'Đặc sản', 'Active', NOW() - INTERVAL '10 days', NOW())
+    RETURNING "ID" INTO product1_id;
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, 'Túi 250g', 20, 15, 5, 250, 200000, 20000, 220000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 150, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, 'Túi 500g', 25, 20, 8, 500, 380000, 38000, 418000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 80, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, 'Tôm Khô Bạc Liêu: Nét Tinh Hoa Từ Đất Và Nước', 'https://example.com/story_tomkho.jpg', TRUE, NOW() - INTERVAL '5 days', NOW());
+
+    -- Sản phẩm 2: Ba Khía
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 253, 'Ba Khía Muối Bạc Liêu', 'Ba khía tươi được muối theo phương pháp truyền thống, đảm bảo độ giòn, vị mặn vừa phải và hương thơm đặc trưng. Thích hợp làm gỏi, rim me hoặc ăn kèm cơm trắng.', '["https://example.com/ba_khia_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000006"]'::jsonb, 'Ba khía tươi', 45, 4.5, 12, TRUE, 'Đặc sản', 'Active', NOW() - INTERVAL '8 days', NOW())
+    RETURNING "ID" INTO product2_id;
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, 'Hộp 500g', 20, 15, 10, 500, 120000, 12000, 132000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 100, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, 'Ba Khía Bạc Liêu: Món quà của rừng ngập mặn', 'https://example.com/story_bakhia.jpg', TRUE, NOW() - INTERVAL '3 days', NOW());
+
+    -- Sản phẩm 3: Củ Cải Muối
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 253, 'Củ Cải Muối Bạc Liêu', 'Củ cải muối thủ công, giòn, thơm, không chất bảo quản. Món ăn dân dã nhưng đậm đà, thường được dùng để nấu canh, kho thịt, hoặc ăn kèm với cháo trắng.', '["https://example.com/cu_cai_muoi_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000006"]'::jsonb, 'Củ cải', 60, 4.7, 20, TRUE, 'Đặc sản', 'Active', NOW() - INTERVAL '7 days', NOW())
+    RETURNING "ID" INTO product3_id;
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product3_id, 'Túi 500g', 18, 12, 6, 500, 45000, 4500, 49500, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 200, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product3_id, 'Củ Cải Muối: Hương Vị Mộc Mạc Của Miền Tây', 'https://example.com/story_cucai.jpg', TRUE, NOW() - INTERVAL '2 days', NOW());
+
+    -- Câu chuyện Cửa hàng
+    INSERT INTO "StoreStory" ("ID", "StoreID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 'Chuyện làng chài Bạc Liêu và nghề làm mắm tôm', 'https://example.com/story_bl.jpg', TRUE, NOW() - INTERVAL '10 days', NOW());
 END $$;
 DO $$
 DECLARE
@@ -279,7 +527,7 @@ BEGIN
 
     -- Bước 4: Sản phẩm 1 - Bún Song Thằn Bình Định
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 262, 'Bún Song Thằn An Thái', 'Bún Song Thằn làm từ đậu xanh nguyên chất, sợi dai, thơm, là đặc sản trứ danh của vùng An Thái, Bình Định.', '["https://example.com/bun_song_than.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Việt Nam', 220, 4.8, 60, TRUE, 'Normal', 'Active', NOW() - INTERVAL '15 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 262, 'Bún Song Thằn An Thái', 'Bún Song Thằn làm từ đậu xanh nguyên chất, sợi dai, thơm, là đặc sản trứ danh của vùng An Thái, Bình Định.', '["https://example.com/bun_song_than.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000006"]'::jsonb, 'Đặc Sản', 220, 4.8, 60, TRUE, 'Normal', 'Active', NOW() - INTERVAL '15 days', NOW())
     RETURNING "ID" INTO product1_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -299,7 +547,7 @@ BEGIN
 
     -- Sản phẩm 2 - Rượu Bàu Đá
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 262, 'Rượu Bàu Đá Bình Định', 'Rượu Bàu Đá nấu thủ công, men gạo truyền thống, nồng nàn hương vị đặc trưng của đất võ Bình Định.', '["https://example.com/ruou_bau_da.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Việt Nam', 300, 4.9, 75, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 262, 'Rượu Bàu Đá Bình Định', 'Rượu Bàu Đá nấu thủ công, men gạo truyền thống, nồng nàn hương vị đặc trưng của đất võ Bình Định.', '["https://example.com/ruou_bau_da.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000001"]'::jsonb, 'Đặc Sản', 300, 4.9, 75, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
     RETURNING "ID" INTO product2_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -319,7 +567,7 @@ BEGIN
 
     -- Sản phẩm 3 - Bánh Ít Lá Gai
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 262, 'Bánh Ít Lá Gai Bình Định', 'Bánh Ít Lá Gai gói bằng lá chuối, nhân dừa đậu xanh, dẻo thơm đặc trưng, là món quà quê nức tiếng xứ Nẫu.', '["https://example.com/banh_it_la_gai.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Việt Nam', 180, 4.7, 40, TRUE, 'Normal', 'Active', NOW() - INTERVAL '10 days', NOW())
+    VALUES (gen_random_uuid(), store_id, 262, 'Bánh Ít Lá Gai Bình Định', 'Bánh Ít Lá Gai gói bằng lá chuối, nhân dừa đậu xanh, dẻo thơm đặc trưng, là món quà quê nức tiếng xứ Nẫu.', '["https://example.com/banh_it_la_gai.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000005"]'::jsonb, 'Đặc Sản', 180, 4.7, 40, TRUE, 'Normal', 'Active', NOW() - INTERVAL '10 days', NOW())
     RETURNING "ID" INTO product3_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -334,6 +582,172 @@ BEGIN
     -- Store Story
     INSERT INTO "StoreStory" ("ID", "StoreID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
     VALUES (gen_random_uuid(), store_id, 'Từ đất võ Bình Định đến thương hiệu đặc sản quê hương', 'https://example.com/story_binhdinh.jpg', TRUE, NOW() - INTERVAL '9 days', NOW());
+END $$;
+DO $$
+DECLARE
+    -- SỬA LỖI 1: Đã thay thế các ký tự khoảng trắng không hợp lệ bằng dấu cách thông thường.
+    seller_user_id UUID;
+    store_id UUID;
+    product1_id UUID;
+    product2_id UUID;
+    product3_id UUID;
+    variant_id UUID;
+BEGIN
+    -- Bước 2: Tạo User và Seller
+    -- Chèn vào bảng User và lấy ID vừa tạo lưu vào biến seller_user_id
+    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "FirstName", "LastName", "PhoneNumber", "Role", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
+    -- SỬA LỖI 2: Đã sắp xếp lại thứ tự các giá trị cho đúng với cột.
+    VALUES (gen_random_uuid(), 'binhduongfarm@gmail.com', '$2b$10$hashedpassword.bd', 'Nam', 'Nguyễn', 'Văn An', '0912345678', 'Seller', 'https://example.com/avatar_binhduong.jpg', TRUE, '1988-04-12', NOW(), NOW())
+    RETURNING "ID" INTO seller_user_id;
+
+    -- Sử dụng seller_user_id để chèn vào bảng Seller
+    INSERT INTO "Seller" ("UserID", "ApprovedBy", "BusinessName", "BusinessLicense", "IdentifyCard", "TaxCode", "IdentifyFrontImage", "IdentifyBackImage", "SellerStatus", "ApprovedAt", "CreatedAt", "UpdatedAt")
+    VALUES (seller_user_id, '10000000-0000-0000-0000-000000000001', 'Nông Sản An Bình Dương', 'BD987654321', '012345678901', 'TX1098765432', 'https://example.com/id_front_bd.jpg', 'https://example.com/id_back_bd.jpg', 'Approved', NOW() - INTERVAL '30 days', NOW() - INTERVAL '35 days', NOW());
+
+    -- Bước 3: Tạo Store
+    -- Chèn vào bảng Store và lấy ID vừa tạo lưu vào biến store_id
+    INSERT INTO "Store" ("ID", "SellerID", "StoreName", "Province", "District", "Ward", "ProvinceID", "DistrictID", "WardID", "Address", "LogoURL", "CoverImageURL", "Status", "SubmittedDate", "DecisionDate", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), seller_user_id, 'Cây Ăn Trái An Bình Dương', 'Bình Dương', 'Bến Cát', 'Phường An Điền', 205, 1, 1, '500 Đường ĐT744, Phường An Điền, Thị xã Bến Cát', 'https://example.com/logo_binhduong.jpg', 'https://example.com/cover_binhduong.jpg', 'Approved', NOW() - INTERVAL '30 days', NOW() - INTERVAL '28 days', NOW() - INTERVAL '35 days', NOW())
+    RETURNING "ID" INTO store_id;
+
+    -- Bước 4 & 5: Tạo Sản phẩm, Biến thể, Tồn kho và Câu chuyện
+
+    -- Sản phẩm 1: Bưởi da xanh Bình Dương
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 205, 'Bưởi Da Xanh Ruột Hồng', 'Bưởi da xanh trồng tại vườn Bình Dương, múi bưởi mọng nước, vị ngọt thanh, vỏ mỏng, ruột hồng đẹp mắt. Trọng lượng 1-1.5kg/quả.', '["https://example.com/buoi_da_xanh_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000003"]'::jsonb, 'Đặc Sản', 85, 4.8, 45, TRUE, 'Normal', 'Active', NOW() - INTERVAL '20 days', NOW())
+    RETURNING "ID" INTO product1_id;
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, '1.2kg/quả', 25, 20, 20, 1200, 100000, 10000, 110000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 150, TRUE, NOW(), NOW());
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, '1.5kg/quả', 28, 22, 22, 1500, 120000, 12000, 132000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 80, TRUE, NOW(), NOW());
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, 'Hành trình cây bưởi da xanh trên đất Bình Dương', 'https://example.com/story_buoi.jpg', TRUE, NOW() - INTERVAL '15 days', NOW());
+
+    -- Sản phẩm 2: Mít tố nữ
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 205, 'Mít Tố Nữ Long Điền', 'Mít tố nữ cơm dày, múi vàng, giòn, ngọt thơm. Trái lớn, thu hoạch tại vườn Long Điền, Bình Dương.', '["https://example.com/mit_to_nu_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000003"]'::jsonb, 'Đặc Sản', 55, 4.7, 28, TRUE, 'Normal', 'Active', NOW() - INTERVAL '18 days', NOW())
+    RETURNING "ID" INTO product2_id;
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, 'Túi 1kg', 30, 20, 15, 1000, 75000, 7500, 82500, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 110, TRUE, NOW(), NOW());
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, 'Mít Tố Nữ Long Điền - Hương vị truyền thống', 'https://example.com/story_mit.jpg', TRUE, NOW() - INTERVAL '10 days', NOW());
+
+    -- Sản phẩm 3: Hạt tiêu đen
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 205, 'Tiêu Đen Lộc Ninh Bình Phước', 'Hạt tiêu đen sấy khô từ vườn Bình Phước, vị cay nồng, thơm đậm. Sản phẩm đóng gói kỹ, đảm bảo chất lượng.', '["https://example.com/tieu_den_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000004"]'::jsonb, 'Đặc Sản', 120, 4.9, 60, TRUE, 'Normal', 'Active', NOW() - INTERVAL '25 days', NOW())
+    RETURNING "ID" INTO product3_id;
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product3_id, 'Hũ 250g', 10, 8, 8, 250, 45000, 4500, 49500, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 200, TRUE, NOW(), NOW());
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product3_id, 'Hạt tiêu Lộc Ninh: Gia vị của những bữa ăn ngon', 'https://example.com/story_tieu.jpg', TRUE, NOW() - INTERVAL '12 days', NOW());
+
+    -- Câu chuyện Cửa hàng
+    INSERT INTO "StoreStory" ("ID", "StoreID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 'Vườn cây ăn trái Bình Dương: Nơi gửi gắm hương vị miền Nam', 'https://example.com/story_binhduong.jpg', TRUE, NOW() - INTERVAL '22 days', NOW());
+END $$;
+DO $$
+DECLARE
+    -- SỬA LỖI 1: Đã thay thế các ký tự khoảng trắng không hợp lệ bằng dấu cách thông thường.
+    seller_user_id UUID;
+    store_id UUID;
+    product1_id UUID;
+    product2_id UUID;
+    product3_id UUID;
+    variant_id UUID;
+BEGIN
+    -- Bước 2: Tạo User và Seller
+    -- Chèn vào bảng User và lấy ID vừa tạo lưu vào biến seller_user_id
+    INSERT INTO "User" ("ID", "Email", "Password", "Gender", "FirstName", "LastName", "PhoneNumber", "Role", "Avatar", "IsActive", "DateOfBirth", "CreatedAt", "UpdatedAt")
+    -- SỬA LỖI 2: Đã thêm giá trị 'Seller' cho cột "Role" và sắp xếp lại đúng thứ tự các giá trị.
+    VALUES (gen_random_uuid(), 'binhphuoc.cashew@gmail.com', '$2b$10$hashedpassword.newuser.bp', 'Nam', 'Hoàng', 'Minh', '0987654321', 'Seller', 'https://example.com/avatar_binhphuoc.jpg', TRUE, '1982-11-25', NOW(), NOW())
+    RETURNING "ID" INTO seller_user_id;
+
+    -- Sử dụng seller_user_id để chèn vào bảng Seller
+    INSERT INTO "Seller" ("UserID", "ApprovedBy", "BusinessName", "BusinessLicense", "IdentifyCard", "TaxCode", "IdentifyFrontImage", "IdentifyBackImage", "SellerStatus", "ApprovedAt", "CreatedAt", "UpdatedAt")
+    VALUES (seller_user_id, '10000000-0000-0000-0000-000000000001', 'Hạt Điều Sạch Bình Phước', 'BL998877665', '078912345678', 'TX1234567891', 'https://example.com/id_front_bp.jpg', 'https://example.com/id_back_bp.jpg', 'Approved', NOW() - INTERVAL '30 days', NOW() - INTERVAL '35 days', NOW());
+
+    -- Bước 3: Tạo Store
+    -- Chèn vào bảng Store và lấy ID vừa tạo lưu vào biến store_id
+    INSERT INTO "Store" ("ID", "SellerID", "StoreName", "Province", "District", "Ward", "ProvinceID", "DistrictID", "WardID", "Address", "LogoURL", "CoverImageURL", "Status", "SubmittedDate", "DecisionDate", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), seller_user_id, 'Nông Sản Hữu Cơ Bình Phước', 'Bình Phước', 'Đồng Xoài', 'Tân Phú', 239, 1, 1, '100 Đường Phú Riềng Đỏ, Phường Tân Phú, Thành phố Đồng Xoài', 'https://example.com/logo_cashew.jpg', 'https://example.com/cover_cashew.jpg', 'Approved', NOW() - INTERVAL '30 days', NOW() - INTERVAL '28 days', NOW() - INTERVAL '35 days', NOW())
+    RETURNING "ID" INTO store_id;
+
+    -- Bước 4 & 5: Tạo Sản phẩm, Biến thể, Tồn kho và Câu chuyện
+
+    -- Sản phẩm 1: Hạt Điều Rang Muối
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 239, 'Hạt Điều Rang Muối Bình Phước', 'Hạt điều rang muối vỏ lụa, hạt to tròn, giòn béo, được chế biến thủ công giữ trọn hương vị tự nhiên, là đặc sản nổi tiếng của Bình Phước.', '["https://example.com/hat_dieu_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000002"]'::jsonb, 'Đặc Sản', 320, 4.9, 150, TRUE, 'Normal', 'Active', NOW() - INTERVAL '25 days', NOW())
+    RETURNING "ID" INTO product1_id;
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, 'Túi 500g', 20, 15, 10, 500, 120000, 12000, 132000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 200, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, 'Hộp 1kg', 25, 20, 15, 1000, 230000, 23000, 253000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 100, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product1_id, 'Hành trình của hạt điều: Từ cây đến sản phẩm chất lượng cao', 'https://example.com/story_hatdieu.jpg', TRUE, NOW() - INTERVAL '15 days', NOW());
+
+    -- Sản phẩm 2: Tiêu Lộc Ninh
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 239, 'Tiêu Đen Lộc Ninh', 'Tiêu Lộc Ninh có hạt chắc, mẩy, cay nồng và hương thơm đặc trưng, được trồng theo phương pháp bền vững tại vùng đất đỏ bazan Bình Phước.', '["https://example.com/tieu_den_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000004"]'::jsonb, 'Đặc Sản', 95, 4.8, 40, TRUE, 'Normal', 'Active', NOW() - INTERVAL '22 days', NOW())
+    RETURNING "ID" INTO product2_id;
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, '250g', 15, 10, 8, 250, 85000, 8500, 93500, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 150, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, '500g', 20, 12, 10, 500, 160000, 16000, 176000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 80, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product2_id, 'Tiêu Lộc Ninh: Hương vị đặc trưng từ vùng đất đỏ bazan', 'https://example.com/story_tieu.jpg', TRUE, NOW() - INTERVAL '10 days', NOW());
+
+    -- Sản phẩm 3: Trái Bơ Sáp
+    INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 239, 'Bơ Sáp Bình Phước', 'Bơ sáp với cơm vàng, dẻo, béo ngậy, hạt nhỏ. Trái được hái tại vườn và vận chuyển trực tiếp, đảm bảo độ tươi ngon nhất.', '["https://example.com/bo_sap_1.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000003"]'::jsonb, 'Đặc Sản', 180, 5.0, 75, TRUE, 'Normal', 'Active', NOW() - INTERVAL '20 days', NOW())
+    RETURNING "ID" INTO product3_id;
+
+    INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product3_id, '1kg (2-3 trái)', 20, 15, 12, 1000, 90000, 9000, 99000, TRUE, NOW(), NOW())
+    RETURNING "ID" INTO variant_id;
+
+    INSERT INTO "InventoryProduct" ("ID", "ProductVariantID", "Quantity", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), variant_id, 120, TRUE, NOW(), NOW());
+
+    INSERT INTO "ProductStory" ("ID", "ProductID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), product3_id, 'Vị bơ sáp Bình Phước: Sự hòa quyện của nắng và gió', 'https://example.com/story_bo.jpg', TRUE, NOW() - INTERVAL '12 days', NOW());
+
+    -- Câu chuyện Cửa hàng
+    INSERT INTO "StoreStory" ("ID", "StoreID", "Title", "ThumbnailURL", "IsActive", "CreatedAt", "UpdatedAt")
+    VALUES (gen_random_uuid(), store_id, 'Hành trình mang nông sản Bình Phước vươn xa', 'https://example.com/story_binhphuoc.jpg', TRUE, NOW() - INTERVAL '18 days', NOW());
 END $$;
 DO $$
 DECLARE
@@ -360,7 +774,8 @@ BEGIN
 
     -- Bước 4: Sản phẩm 1 - Cà Phê Nhân Xanh Pleiku
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 207, 'Cà Phê Nhân Xanh Pleiku', 'Cà phê nhân xanh được thu hái thủ công từ những nông trại cao nguyên Gia Lai, hạt cà phê săn chắc, hương thơm nồng nàn đặc trưng vùng đất đỏ bazan.', '["https://example.com/caphe_nhanxanh.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Việt Nam', 210, 4.9, 80, TRUE, 'Normal', 'Active', NOW() - INTERVAL '15 days', NOW())
+    -- SỬA LỖI: Chuyển CategoryID sang định dạng JSON array và ép kiểu jsonb
+    VALUES (gen_random_uuid(), store_id, 207, 'Cà Phê Nhân Xanh Pleiku', 'Cà phê nhân xanh được thu hái thủ công từ những nông trại cao nguyên Gia Lai, hạt cà phê săn chắc, hương thơm nồng nàn đặc trưng vùng đất đỏ bazan.', '["https://example.com/caphe_nhanxanh.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000001"]'::jsonb, 'Đặc Sản', 210, 4.9, 80, TRUE, 'Normal', 'Active', NOW() - INTERVAL '15 days', NOW())
     RETURNING "ID" INTO product1_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -380,7 +795,8 @@ BEGIN
 
     -- Sản phẩm 2 - Tiêu Chư Sê Gia Lai
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 207, 'Tiêu Chư Sê Gia Lai', 'Hạt tiêu Chư Sê thơm cay nồng nàn, được trồng trên vùng đất bazan màu mỡ, là đặc sản trứ danh của Gia Lai.', '["https://example.com/tieu_chuse.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Việt Nam', 190, 4.8, 60, TRUE, 'Normal', 'Active', NOW() - INTERVAL '13 days', NOW())
+    -- SỬA LỖI: Chuyển CategoryID sang định dạng JSON array và ép kiểu jsonb
+    VALUES (gen_random_uuid(), store_id, 207, 'Tiêu Chư Sê Gia Lai', 'Hạt tiêu Chư Sê thơm cay nồng nàn, được trồng trên vùng đất bazan màu mỡ, là đặc sản trứ danh của Gia Lai.', '["https://example.com/tieu_chuse.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000004"]'::jsonb, 'Đặc Sản', 190, 4.8, 60, TRUE, 'Normal', 'Active', NOW() - INTERVAL '13 days', NOW())
     RETURNING "ID" INTO product2_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")
@@ -394,7 +810,8 @@ BEGIN
 
     -- Sản phẩm 3 - Mật Ong Rừng Kbang
     INSERT INTO "Product" ("ID", "StoreID", "ProvinceID", "Name", "Description", "ProductImages", "CategoryID", "MadeBy", "SaleCount", "Rating", "ReviewCount", "IsActive", "TypeProduct", "Status", "CreatedAt", "UpdatedAt")
-    VALUES (gen_random_uuid(), store_id, 207, 'Mật Ong Rừng Kbang', 'Mật ong rừng tự nhiên được thu hoạch tại huyện Kbang, Gia Lai. Vị ngọt thanh, mùi thơm dịu, đặc sánh tự nhiên, giàu dưỡng chất.', '["https://example.com/matong_kbang.jpg"]'::jsonb, '["13000000-0000-0000-0000-000000000005"]'::jsonb, 'Việt Nam', 140, 5.0, 55, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
+    -- SỬA LỖI: Chuyển CategoryID sang định dạng JSON array và ép kiểu jsonb
+    VALUES (gen_random_uuid(), store_id, 207, 'Mật Ong Rừng Kbang', 'Mật ong rừng tự nhiên được thu hoạch tại huyện Kbang, Gia Lai. Vị ngọt thanh, mùi thơm dịu, đặc sánh tự nhiên, giàu dưỡng chất.', '["https://example.com/matong_kbang.jpg"]'::jsonb, '["a1000000-0000-0000-0000-000000000007"]'::jsonb, 'Đặc Sản', 140, 5.0, 55, TRUE, 'Normal', 'Active', NOW() - INTERVAL '12 days', NOW())
     RETURNING "ID" INTO product3_id;
 
     INSERT INTO "ProductVariant" ("ID", "ProductID", "VariantName", "Length", "Width", "Height", "Weight", "BasePrice", "commission", "FinalPrice", "IsActive", "CreatedAt", "UpdatedAt")

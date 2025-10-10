@@ -2,7 +2,9 @@
 import math
 import re
 from typing import List, Optional, Set
-from app.services.search_constants import CATEGORY_KEYWORDS, SUB_REGION_KEYWORDS
+
+# Bỏ import CATEGORY_KEYWORDS, SUB_REGION_KEYWORDS vẫn giữ lại
+from app.services.search_constants import SUB_REGION_KEYWORDS
 
 def remove_vietnamese_diacritics(text: str) -> str:
     """Loại bỏ dấu tiếng Việt khỏi một chuỗi văn bản."""
@@ -40,21 +42,31 @@ def calculate_text_similarity(query: str, product_name: str) -> float:
     except Exception:
         return 0.0
 
-def detect_query_categories(query: str) -> List[str]:
-    """Returns a list of category UUIDs that match the query keywords."""
-    query_lower = query.lower()
+def detect_query_categories(query: str, all_categories: List[str]) -> List[str]:
+    """
+    Phát hiện tên danh mục trong câu truy vấn bằng cách so khớp với
+    danh sách tất cả danh mục đã được tải từ DB.
+    """
+    query_unaccented = remove_vietnamese_diacritics(query.lower())
     matched_categories = []
-    for category_uuid, keywords in CATEGORY_KEYWORDS.items():
-        if any(keyword in query_lower for keyword in keywords):
-            matched_categories.append(category_uuid)
+    # all_categories đã được chuyển thành không dấu và chữ thường khi tải
+    for category_name_unaccented in all_categories:
+        if category_name_unaccented in query_unaccented:
+            matched_categories.append(category_name_unaccented)
     return matched_categories
 
 
-def check_category_match(product_category_ids: List[str], query_category_ids: List[str]) -> int:
-    """Returns 1 if there's any overlap between product and query categories, 0 otherwise."""
-    if not query_category_ids or not product_category_ids:
+def check_category_match(product_category_names: List[str], query_category_names: List[str]) -> int:
+    """
+    Trả về 1 nếu có sự trùng khớp giữa danh mục của sản phẩm và
+    danh mục được phát hiện trong câu truy vấn.
+    """
+    if not query_category_names or not product_category_names:
         return 0
-    return 1 if any(cat in product_category_ids for cat in query_category_ids) else 0
+    # Chuyển tên danh mục của sản phẩm thành dạng không dấu, chữ thường để so khớp
+    product_cats_unaccented = {remove_vietnamese_diacritics(name.lower()) for name in product_category_names}
+    # query_category_names đã ở dạng không dấu từ hàm detect_query_categories
+    return 1 if any(q_cat in product_cats_unaccented for q_cat in query_category_names) else 0
 
 
 def check_region_match(product_sub_region: Optional[str], query_sub_region: Optional[str]) -> int:
@@ -73,7 +85,7 @@ def detect_query_sub_region(query: str) -> Optional[str]:
             return sub_region
     return None
 
-def extract_features(product_data: dict, query: str) -> List[float]:
+def extract_features(product_data: dict, query: str, all_categories: List[str]) -> List[float]:
     """
     Trích xuất một vector đặc trưng từ dữ liệu của một sản phẩm.
     """
@@ -103,9 +115,9 @@ def extract_features(product_data: dict, query: str) -> List[float]:
     features.append(1 if product_data.get("is_certified") else 0)
     features.append(1 if product_data.get("store_status") == "Approved" else 0)
 
-    # 6. Category Match
-    query_categories = detect_query_categories(query)
-    product_categories = product_data.get("category_id", [])
+    # 6. Category Match (Sử dụng logic mới)
+    query_categories = detect_query_categories(query, all_categories)
+    product_categories = product_data.get("category_names", []) # Lấy tên danh mục
     if not isinstance(product_categories, list):
         product_categories = []
     category_match = check_category_match(product_categories, query_categories)

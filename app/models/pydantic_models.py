@@ -66,3 +66,18 @@ class EmbeddingResponse(BaseModel): #
     Defines the structure of the embedding API's response.
     """
     embedding: List[float] #
+
+
+class SuggestionRequest(BaseModel):
+    """
+    Định nghĩa cấu trúc của request gợi ý tìm kiếm.
+    """
+    prefix: str = Field(..., example="quà")
+    limit: int = Field(5, gt=0, le=20, example=5)
+
+class SuggestionResponse(BaseModel):
+    """
+    Định nghĩa cấu trúc response trả về cho API gợi ý.
+    """
+    prefix: str = Field(..., example="quà")
+    suggestions: List[str] = Field(..., example=["quà tết", "quà biếu", "quà tặng"])

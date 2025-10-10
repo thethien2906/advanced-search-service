@@ -56,7 +56,7 @@ def embed_existing_products():
             s."StoreName" as store_name,
             prov."Name" as province_name,
             prov."Region" as region_name,
-            prov."SubRegion" as sub_region_name,
+            prov."RegionSpecified" as sub_region_name,
             ps."Title" as product_story_title,
             (SELECT "ContentData" FROM "ProductStoryContent" WHERE "ProductStoryID" = ps."ID" LIMIT 1) as product_story_detail,
             (SELECT "ContentData" FROM "StoreStoryContent" WHERE "StoreStoryID" = ss."ID" LIMIT 1) as store_story_detail,

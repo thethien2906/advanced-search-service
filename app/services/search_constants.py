@@ -19,27 +19,52 @@ FEATURE_SCHEMA = [
     "region_match"
 ]
 
-CATEGORY_KEYWORDS = {
-    "food_category_uuid": ["mật ong", "honey", "nước mắm", "fish sauce", "cà phê", "coffee", "bánh", "trà", "đặc sản", "gia vị"],
-    "handicraft_category_uuid": ["gốm", "pottery", "thủ công", "handmade", "tranh", "đèn lồng", "mây tre đan"],
-    "fashion_category_uuid": ["lụa", "silk", "nón lá", "áo dài", "túi cói", "vải", "thổ cẩm"],
-    "jewelry_category_uuid": ["vòng tay", "trang sức", "bạc"],
-}
 
 QUERY_EXPANSION_MAP = {
-    # Có dấu
-    "nhậu": ["hải sản khô", "mực một nắng", "khô cá", "lai rai", "rượu", "chua cay"],
-    "biếu tặng": ["cao cấp", "sang trọng", "hộp quà", "đặc sản làm quà", "quà biếu"],
-    "nấu ăn": ["gia vị", "nêm nếm", "nguyên liệu", "nước chấm"],
-    "ăn vặt": ["bánh kẹo", "khô", "mứt", "trái cây sấy"],
+    # ======================================================================
+    # PHIÊN BẢN CÓ DẤU - DÀNH CHO TRUY VẤN TIẾNG VIỆT CHUẨN
+    # ======================================================================
 
-    # Bổ sung không dấu
-    "nhau": ["hai san kho", "muc mot nang", "kho ca", "lai rai", "ruou", "chua cay"],
-    "bieu tang": ["cao cap", "sang trong", "hop qua", "dac san lam qua", "qua bieu"],
-    "nau an": ["gia vi", "nem nem", "nguyen lieu", "nuoc cham"],
-    "an vat": ["banh keo", "kho", "mut", "trai cay say"],
+    # Tụ tập, ăn uống cùng bạn bè
+    "nhậu": ["lai rai", "bạn bè", "cuối tuần", "món nhắm", "đậm vị", "cay nồng"],
+
+    # Mua quà, biếu tặng
+    "biếu tặng": [
+        "cao cấp", "sang trọng", "lịch sự", "ý nghĩa", "hộp quà",
+        "doanh nghiệp", "gia đình", "người thân", "truyền thống"
+    ],
+
+    # Phục vụ nấu nướng hàng ngày
+    "nấu ăn": ["gia vị", "nêm nếm", "nguyên liệu", "hương vị", "đậm đà", "bữa cơm", "nhà bếp"],
+
+    # Ăn vặt, giải trí
+    "ăn vặt": ["buồn miệng", "thư giãn", "giòn", "ngọt", "mặn mà", "xem phim"],
+
+    # Chăm sóc sức khỏe
+    "sức khỏe": ["bồi bổ", "dinh dưỡng", "tự nhiên", "nguyên chất", "thanh lọc", "người lớn tuổi"],
+
+    # Mua sắm khi đi du lịch
+    "du lịch": ["mang về", "kỷ niệm", "vùng miền", "đặc trưng", "khám phá"],
+
+    # ======================================================================
+    # PHIÊN BẢN KHÔNG DẤU - ĐỒNG BỘ VỚI PHIÊN BẢN CÓ DẤU
+    # ======================================================================
+
+    "nhau": ["lai rai", "ban be", "cuoi tuan", "mon nham", "dam vi", "cay nong"],
+
+    "bieu tang": [
+        "cao cap", "sang trong", "lich su", "y nghia", "hop qua",
+        "doanh nghiep", "gia dinh", "nguoi than", "truyen thong"
+    ],
+
+    "nau an": ["gia vi", "nem nem", "nguyen lieu", "huong vi", "dam da", "bua com", "nha bep"],
+
+    "an vat": ["buon mieng", "thu gian", "gion", "ngot", "man ma", "xem phim"],
+
+    "suc khoe": ["boi bo", "dinh duong", "tu nhien", "nguyen chat", "thanh loc", "nguoi lon tuoi"],
+
+    "du lich": ["mang ve", "ky niem", "vung mien", "dac trung", "kham pha"],
 }
-
 SUB_REGION_KEYWORDS = {
     # --- MIỀN BẮC ---
     "Tây Bắc Bộ": [
@@ -101,3 +126,20 @@ REGION_HIERARCHY = {
     "miền trung": ["Bắc Trung Bộ", "Tây Nguyên", "Duyên Hải Nam Trung Bộ"],
     "miền nam": ["Đông Nam Bộ", "Đồng bằng sông Cửu Long"]
 }
+
+
+GIFT_INTENT_KEYWORDS = [
+    "quà", "biếu", "tặng", "tết", "người thân", "gia đình", "đồng nghiệp"
+]
+
+GIFT_CATEGORY_NAMES = [
+    "Bánh, Mứt & Kẹo truyền thống",
+    "Gốm sứ nghệ thuật",
+    "Sản phẩm từ Vải & Lụa tơ tằm",
+    "Sơn mài truyền thống",
+    "Trang sức & Phụ kiện thủ công",
+    "Đồ trang trí & Quà tặng",
+    "Thực phẩm chế biến & Khô",
+    "Cà phê, Trà & Đồ uống",
+    "Mật ong & Sản phẩm từ ong"
+]
