@@ -78,7 +78,7 @@ def main():
             logger.info(f"📬 Received search request | RequestID: {request_id} | Query: '{query_text}'")
 
             # Gọi logic tìm kiếm từ SearchService
-            search_results = search_service.search_with_ml(query=query_text, limit=limit)
+            search_results = search_service.search_semantic(query=query_text, limit=limit)
 
             # --- GIAI ĐOẠN 3: GỬI KẾT QUẢ VÀ LOGGING ---
 
