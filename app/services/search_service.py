@@ -109,7 +109,6 @@ class SearchService:
                 p."Rating",
                 p."ReviewCount",
                 p."SaleCount",
-                -- Lấy mảng tên danh mục
                 (
                     SELECT array_agg(pc."Name")
                     FROM "ProductCategory" pc
@@ -122,11 +121,12 @@ class SearchService:
                 (p."Embedding" <=> %s) AS distance,
                 pr."Name" AS "ProvinceName",
                 pr."Region" AS "RegionName",
-                pr."RegionSpecified" AS "RegionSpecifiedName"
+                pr."RegionSpecified" AS "RegionSpecifiedName",
+                p."CreatedAt"
             FROM "Product" p
-            INNER JOIN "ProductVariant" pv ON p."ID" = pv."ProductID"
-            INNER JOIN "InventoryProduct" ip ON pv."ID" = ip."ProductVariantID"
-            INNER JOIN "Store" s ON p."StoreID" = s."ID"
+            LEFT JOIN "ProductVariant" pv ON p."ID" = pv."ProductID"
+            LEFT JOIN "InventoryProduct" ip ON pv."ID" = ip."ProductVariantID"
+            LEFT JOIN "Store" s ON p."StoreID" = s."ID"
             LEFT JOIN "Province" pr ON p."ProvinceID" = pr."ID"
         """
 
@@ -163,7 +163,9 @@ class SearchService:
                 "relevance_score": 1 - row[10], # Cosine similarity
                 "province_name": row[11],
                 "region_name": row[12],
-                "sub_region_name": row[13]
+                "sub_region_name": row[13],
+                "createdAt": row[14].isoformat() if row[14] else None # Thêm dòng này
+
             })
         # ======================================================================
 

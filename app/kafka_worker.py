@@ -26,7 +26,7 @@ def main():
     # Khởi tạo KafkaConsumer để lắng nghe yêu cầu
     try:
         consumer = KafkaConsumer(
-            'search_requests',
+            settings.SEARCH_REQUESTS_TOPIC,
             bootstrap_servers=settings.KAFKA_BROKER_URL,
             auto_offset_reset='earliest',
             enable_auto_commit=True,
@@ -87,8 +87,8 @@ def main():
                 "request_id": request_id,
                 "products": search_results
             }
-            producer.send('search_results', value=result_payload)
-            logger.info(f"📤 Sent {len(search_results)} results to 'search_results' for RequestID: {request_id}")
+            producer.send(settings.SEARCH_RESULTS_TOPIC, value=result_payload)
+            logger.info(f"📤 Sent {len(search_results)} results to '{settings.SEARCH_RESULTS_TOPIC}' for RequestID: {request_id}")
 
             # 2. Gửi dữ liệu log vào topic 'search_logging_events'
             ranked_ids = [result['id'] for result in search_results]
@@ -100,8 +100,8 @@ def main():
                 "ranked_product_ids": ranked_ids,
                 "timestamp": datetime.now(timezone.utc).isoformat()
             }
-            producer.send('search_logging_events', value=log_payload)
-            logger.info(f"📝 Sent log event to 'search_logging_events' for RequestID: {request_id}")
+            producer.send(settings.SEARCH_LOGGING_TOPIC, value=log_payload)
+            logger.info(f"📝 Sent log event to '{settings.SEARCH_LOGGING_TOPIC}' for RequestID: {request_id}")
 
             # Đảm bảo message được gửi đi
             producer.flush()
