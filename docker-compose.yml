@@ -1,4 +1,4 @@
-# docker-compose.yml
+# docker-compose.yml (đã cập nhật)
 
 services:
   postgres:
@@ -61,8 +61,8 @@ services:
       postgres:
         condition: service_healthy
       kafka:
-        condition: service_started # kafka doesn't have a simple healthcheck
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+        condition: service_started
+    command: python app/kafka_worker.py
 
 volumes:
   postgres_data:
