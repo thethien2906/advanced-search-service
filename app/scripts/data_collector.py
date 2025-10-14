@@ -18,7 +18,7 @@ load_dotenv(dotenv_path=dotenv_path)
 # --- CONFIGURATION ---
 DATABASE_URL = os.getenv("DATABASE_URL")
 KAFKA_BROKER_URL = os.getenv("KAFKA_BROKER_URL", "kafka:9092").split(',')
-KAFKA_TOPIC = os.getenv("KAFKA_SEARCH_EVENTS_TOPIC", "search_events")
+KAFKA_TOPIC = "search_logging_events"
 CONSUMER_GROUP_ID = "search-log-consumer-group"
 
 def get_db_connection():
@@ -32,13 +32,11 @@ def get_db_connection():
 
 def insert_log_to_db(cursor, event_data: dict):
     """Inserts a single search log event into the database."""
-    # Updated SQL to include the new column
     sql = """
     INSERT INTO "SearchLog" ("ID", "UserID", "QueryText", "ResultCount", "RankedProductIDs", "CreatedAt")
     VALUES (%s, %s, %s, %s, %s, %s)
     ON CONFLICT ("ID") DO NOTHING;
     """
-    # Convert list of IDs to a JSON string for insertion
     ranked_ids_json = json.dumps(event_data.get("ranked_product_ids"))
 
     params = (
@@ -46,7 +44,7 @@ def insert_log_to_db(cursor, event_data: dict):
         event_data.get("user_id"),
         event_data.get("query_text"),
         event_data.get("result_count"),
-        ranked_ids_json, # Pass the JSON string
+        ranked_ids_json,
         event_data.get("timestamp")
     )
     try:
