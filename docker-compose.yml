@@ -13,3 +13,14 @@ services:
       - SEARCH_LOGGING_TOPIC=search_logging_events
     port:
       8055:8055
+  data-collector:
+    build: .
+    volumes:
+      - ./app:/app/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DATABASE_URL=postgresql://postgres:123456@host.docker.internal:5431/HomeLandFinest
+      - KAFKA_BROKER_URL=154.26.130.248:9092
+    command: ["python", "-m", "app.scripts.data_collector"]
+    depends_on:
+      - search-service
