@@ -17,7 +17,7 @@ load_dotenv(dotenv_path=dotenv_path)
 
 # --- CONFIGURATION ---
 DATABASE_URL = os.getenv("DATABASE_URL")
-KAFKA_BROKER_URL = os.getenv("KAFKA_BROKER_URL", "kafka:9092").split(',')
+KAFKA_BROKER_URL = os.getenv("KAFKA_BROKER_URL", "154.26.130.248:9092").split(',')
 KAFKA_TOPIC = "search_logging_events"
 CONSUMER_GROUP_ID = "search-log-consumer-group"
 

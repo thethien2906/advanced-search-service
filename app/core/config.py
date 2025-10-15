@@ -15,9 +15,9 @@ class Settings(BaseSettings):
     )
 
     # --- Các biến môi trường của bạn giữ nguyên ---
-    DATABASE_URL: str = "postgresql://user:password@host:port/database"
+    DATABASE_URL: str = "postgresql://postgres:123456@host.docker.internal:5431/HomeLandFinest"
     MODEL_NAME: str = "bkai-foundation-models/vietnamese-bi-encoder"
-    KAFKA_BROKER_URL: str = "kafka:9092"
+    KAFKA_BROKER_URL: str = "154.26.130.248:9092"
     SEARCH_REQUESTS_TOPIC: str = "search_requests"
     SEARCH_RESULTS_TOPIC: str = "search_results"
     SEARCH_LOGGING_TOPIC: str = "search_logging_events"

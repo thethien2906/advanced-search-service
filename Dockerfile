@@ -20,6 +20,6 @@ COPY entrypoint.sh .
 # Step 6: Cấp quyền thực thi cho script
 RUN chmod +x entrypoint.sh
 # --- KẾT THÚC THAY ĐỔI ---
-
+EXPOSE 8055
 # Step 7: Thiết lập entrypoint để script được chạy khi container khởi động
 ENTRYPOINT ["./entrypoint.sh"]

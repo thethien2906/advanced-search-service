@@ -1,8 +1,7 @@
-# docker-compose.yml (Cập nhật)
+# docker-compose.yml
 services:
   search-service:
     build: .
-    # Không cần 'ports' nữa vì worker không mở port nào
     volumes:
       - ./app:/app/app
     environment:
@@ -12,3 +11,5 @@ services:
       - SEARCH_REQUESTS_TOPIC=search_requests
       - SEARCH_RESULTS_TOPIC=search_results
       - SEARCH_LOGGING_TOPIC=search_logging_events
+    port:
+      8055:8055
