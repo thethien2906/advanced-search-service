@@ -64,16 +64,17 @@ def main():
             request_data = message.value
             prefix = request_data.get("prefix")
             request_id = request_data.get("request_id")
+            user_id = request_data.get("user_id") # Lấy user_id từ message
             limit = request_data.get("limit", 5)
 
             if not prefix or not request_id:
                 logger.warning(f"⚠️ Received message with missing 'prefix' or 'request_id'. Skipping.")
                 continue
 
-            logger.info(f"📬 Received suggestion request | RequestID: {request_id} | Prefix: '{prefix}'")
+            logger.info(f"📬 Received suggestion request | RequestID: {request_id} | Prefix: '{prefix}' | UserID: {user_id}")
 
-            # Get suggestions from the service
-            suggestions = suggestion_service.get_suggestions(prefix=prefix, limit=limit)
+            # Get suggestions from the service, truyền cả user_id
+            suggestions = suggestion_service.get_suggestions(prefix=prefix, user_id=user_id, limit=limit)
 
             # Send results to 'suggestion_results' topic
             result_payload = {
