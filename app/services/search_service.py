@@ -28,6 +28,17 @@ class SearchService:
             print(f"Loading sentence-transformers model: {settings.MODEL_NAME}...")
             self.model = SentenceTransformer(settings.MODEL_NAME)
             print("Model loaded successfully.")
+            try:
+                signal_producer = KafkaProducer(
+                    bootstrap_servers=settings.KAFKA_BROKER_URL,
+                    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+                )
+                signal_producer.send(settings.MODEL_READY_TOPIC, value={'status': 'ready'})
+                signal_producer.flush()
+                signal_producer.close()
+                print(f"✅ Sent 'model ready' signal to topic '{settings.MODEL_READY_TOPIC}'.")
+            except Exception as e:
+                print(f"❌ Could not send 'model ready' signal: {e}")
         except Exception as e:
             print(f"CRITICAL: Failed to load sentence-transformers model: {e}")
             raise

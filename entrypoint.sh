@@ -3,13 +3,17 @@
 # Thoát ngay lập tức nếu có lỗi
 set -e
 
-echo "--- [ENTRYPOINT] Bắt đầu khởi tạo service ---"
+echo "--- [ENTRYPOINT] Đang khởi động worker cho: $SERVICE_NAME ---"
 
-# Bước 1: Chạy script để tạo/cập nhật embedding cho sản phẩm
-echo "--- [ENTRYPOINT] Đang chạy script tạo embedding... ---"
-python -m app.scripts.seed_data
-echo "--- [ENTRYPOINT] Script tạo embedding đã hoàn tất. ---"
-
-# Bước 2: Khởi chạy ứng dụng chính (Kafka worker)
-echo "--- [ENTRYPOINT] Đang khởi động Kafka worker... ---"
-exec python -m app.kafka_worker
+if [ "$SERVICE_NAME" = "seeder-worker" ]; then
+  exec python -m app.seeder_worker
+elif [ "$SERVICE_NAME" = "suggestion-worker" ]; then
+  exec python -m app.suggestion_worker
+elif [ "$SERVICE_NAME" = "data-collector" ]; then
+  exec python -m app.scripts.data_collector
+elif [ "$SERVICE_NAME" = "search-service" ]; then
+  exec python -m app.search_worker
+else
+  echo "Lỗi: Biến môi trường SERVICE_NAME không hợp lệ hoặc chưa được đặt: $SERVICE_NAME"
+  exit 1
+fi

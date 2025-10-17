@@ -7,6 +7,7 @@ from app.services.search_service import SearchService
 from app.core.config import settings
 import uuid
 from datetime import datetime, timezone
+import os
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +21,7 @@ def main():
     - Gửi kết quả và log đến các topic Kafka tương ứng.
     """
     logger.info("=============================================")
-    logger.info("      🚀 Kafka Worker Service Starting 🚀")
+    logger.info("      🚀 Search Worker Starting 🚀")
     logger.info("=============================================")
 
     # Khởi tạo KafkaConsumer để lắng nghe yêu cầu

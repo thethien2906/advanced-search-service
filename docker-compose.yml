@@ -1,26 +1,37 @@
 # docker-compose.yml
 services:
-  search-service:
+  seeder-worker:
     build: .
-    volumes:
-      - ./app:/app/app
     environment:
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=postgresql://postgres:123456@host.docker.internal:5431/HomeLandFinest
-      - KAFKA_BROKER_URL=154.26.130.248:9092
-      - SEARCH_REQUESTS_TOPIC=search_requests
-      - SEARCH_RESULTS_TOPIC=search_results
-      - SEARCH_LOGGING_TOPIC=search_logging_events
-    port:
-      8055:8055
+      PYTHONUNBUFFERED: 1
+      DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BROKER_URL: ${KAFKA_BROKER_URL}
+      MODEL_READY_TOPIC: ${MODEL_READY_TOPIC}
   data-collector:
     build: .
-    volumes:
-      - ./app:/app/app
     environment:
-      - PYTHONUNBUFFERED=1
-      - DATABASE_URL=postgresql://postgres:123456@host.docker.internal:5431/HomeLandFinest
-      - KAFKA_BROKER_URL=154.26.130.248:9092
-    command: ["python", "-m", "app.scripts.data_collector"]
-    depends_on:
-      - search-service
+      SERVICE_NAME: "data-collector"
+      PYTHONUNBUFFERED: 1
+      DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BROKER_URL: ${KAFKA_BROKER_URL}
+
+  suggestion-worker:
+    build: .
+    environment:
+      SERVICE_NAME: "suggestion-worker"
+      PYTHONUNBUFFERED: 1
+      DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BROKER_URL: ${KAFKA_BROKER_URL}
+      SUGGESTION_REQUESTS_TOPIC: ${SUGGESTION_REQUESTS_TOPIC}
+      SUGGESTION_RESULTS_TOPIC: ${SUGGESTION_RESULTS_TOPIC}
+
+  search-service:
+    build: .
+    environment:
+      SERVICE_NAME: "search-service"
+      PYTHONUNBUFFERED: 1
+      DATABASE_URL: ${DATABASE_URL}
+      KAFKA_BROKER_URL: ${KAFKA_BROKER_URL}
+      SEARCH_REQUESTS_TOPIC: ${SEARCH_REQUESTS_TOPIC}
+      SEARCH_RESULTS_TOPIC: ${SEARCH_RESULTS_TOPIC}
+      SEARCH_LOGGING_TOPIC: ${SEARCH_LOGGING_TOPIC}

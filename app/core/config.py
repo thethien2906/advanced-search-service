@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     SEARCH_REQUESTS_TOPIC: str = "search_requests"
     SEARCH_RESULTS_TOPIC: str = "search_results"
     SEARCH_LOGGING_TOPIC: str = "search_logging_events"
+    SUGGESTION_REQUESTS_TOPIC: str = "suggestion_requests"
+    SUGGESTION_RESULTS_TOPIC: str = "suggestion_results"
+    MODEL_READY_TOPIC: str = "model_ready_signal"
 
 
 # Create a single, reusable instance of the settings
