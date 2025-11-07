@@ -4,6 +4,7 @@ services:
     build: .
     environment:
       PYTHONUNBUFFERED: 1
+      SERVICE_NAME: "seeder-worker"
       DATABASE_URL: ${DATABASE_URL}
       KAFKA_BROKER_URL: ${KAFKA_BROKER_URL}
       MODEL_READY_TOPIC: ${MODEL_READY_TOPIC}

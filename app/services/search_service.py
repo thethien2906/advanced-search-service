@@ -4,7 +4,8 @@ import logging
 from kafka import KafkaProducer
 from kafka.errors import KafkaError
 # (MỚI) Thêm UUID
-from typing import List, Dict, Any, Optional, UUID
+from typing import List, Dict, Any, Optional
+from uuid import UUID
 from sentence_transformers import SentenceTransformer
 import numpy as np
 from app.core.config import settings
