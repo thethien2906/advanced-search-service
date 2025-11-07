@@ -347,8 +347,8 @@ class SearchService:
 
             agg_features = self._get_aggregated_sku_features(root_id) #
 
-            is_certified = self._get_is_certified(root_id)
-
+            # is_certified = self._get_is_certified(root_id)
+            is_certified = True
             combined_product_data = {
                 "relevance_score": 1.0 - p_candidate["relevance_score"],
                 "name": p_candidate["name"], #
