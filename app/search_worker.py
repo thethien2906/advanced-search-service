@@ -92,7 +92,7 @@ def main():
             logger.info(f"📤 Sent {len(search_results)} results to '{settings.SEARCH_RESULTS_TOPIC}' for RequestID: {request_id}")
 
             # 2. Gửi dữ liệu log vào topic 'search_logging_events'
-            ranked_ids = [result['id'] for result in search_results]
+            ranked_ids = [result['Id'] for result in search_results]
             log_payload = {
                 "search_id": str(uuid.uuid4()),
                 "user_id": user_id,

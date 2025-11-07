@@ -104,12 +104,10 @@ class SearchService:
 
     def _get_semantic_candidates(self, query: str) -> List[Dict[str, Any]]:
         """
-        (ĐÃ CẬP NHẬT Ở GIAI ĐOẠN 2)
-        Triển khai SKU-Driven.
-        1. Tìm các "Gốc Hiển thị" (Master/Detail) gần nhất bằng pgvector.
-        2. Lọc Gốc theo Status = 'Approved' và IsActive = true.
-        3. Dùng AND EXISTS để kiểm tra Gốc "còn sống".
-        4. Chỉ trả về các trường cần thiết cho Giai đoạn 2 (ML Re-ranking).
+        Triển khai logic "SKU-Driven"
+        1. Tìm tất cả "SKU Lá" hợp lệ (có thể bán).
+        2. Leo ngược cây từ các SKU đó để tìm "Gốc Hiển thị" (Display Root).
+        3. Chỉ thực hiện vector search trên các "Gốc Hiển thị" hợp lệ này.
         """
         if not self.model:
             raise RuntimeError("Search model is not available.")
@@ -118,30 +116,85 @@ class SearchService:
         query_embedding = self.model.encode(expanded_query, normalize_embeddings=True)
 
         base_sql = """
+        -- CTE 1: Tìm tất cả "SKU Lá" hợp lệ (định nghĩa "Thực thể Bán được")
+        WITH RECURSIVE valid_leaf_skus AS (
+            SELECT
+                p_leaf."ID",
+                p_leaf."ParentID"
+            FROM "Product" p_leaf
+            -- Phải có thông tin giá/kho hàng
+            JOIN "ProductVariant" pv ON p_leaf."ID" = pv."ID"
+            WHERE
+                p_leaf."ProductType" = 'ProductVariant'
+                AND p_leaf."IsActive" = true
+                AND pv."Quantity" > 0
+                -- Phải là "lá" (không có con nào là ProductVariant) [cite: 41, 49]
+                AND NOT EXISTS (
+                    SELECT 1 FROM "Product" p_child
+                    WHERE p_child."ParentID" = p_leaf."ID" AND p_child."ProductType" = 'ProductVariant'
+                )
+        ),
+        -- CTE 2: "Leo ngược" từ SKU Lá lên để tìm "Gốc Hiển thị"
+        display_root_cte AS (
+            -- Mỏ neo: Bắt đầu từ Cha của SKU Lá
+            SELECT
+                p_parent."ID",
+                p_parent."ParentID",
+                p_parent."ProductType"
+            FROM "Product" p_parent
+            JOIN valid_leaf_skus vls ON p_parent."ID" = vls."ParentID"
+
+            UNION ALL
+
+            -- Đệ quy: Tiếp tục leo lên chừng nào vẫn là ProductVariant [cite: 55]
+            SELECT
+                p_parent."ID",
+                p_parent."ParentID",
+                p_parent."ProductType"
+            FROM "Product" p_parent
+            JOIN display_root_cte dr ON p_parent."ID" = dr."ParentID"
+            WHERE
+                dr."ProductType" = 'ProductVariant'
+        ),
+        -- CTE 3: Lấy danh sách Gốc Hiển thị (Display Root) duy nhất
+        -- Đây là các nút dừng (Master/Detail) [cite: 56]
+        valid_display_roots AS (
+            SELECT DISTINCT "ID"
+            FROM display_root_cte
+            WHERE "ProductType" != 'ProductVariant'
+        )
+
+        -- Truy vấn chính: Chỉ tìm kiếm trên các Gốc Hiển thị hợp lệ
         SELECT
             P_Goc."ID",
             (P_Goc."Embedding" <=> %(query_embedding)s) AS distance,
 
-            -- Lấy các trường GĐ 1 cần cho GĐ 2
+            -- Các trường GĐ 1 (đã fix ở lần trước)
             P_Goc."Name" AS "name",
             P_Goc."ProductImages" AS "product_images",
             s."Status" AS "store_status",
-            (
-                SELECT array_agg(pc."Name")
-                FROM "ProductCategory" pc
-                WHERE pc."ID"::text IN (SELECT jsonb_array_elements_text(P_Goc."CategoryID"))
-            ) as "category_names",
-            pr."RegionSpecified" AS "sub_region_name"
+            ARRAY_REMOVE(ARRAY[pc."Name", pc_parent."Name"], NULL) as "category_names",
+
+            -- Các trường bị null (sẽ giải thích ở dưới)
+            pr."RegionSpecified" AS "sub_region_name",
+            pr."Name" AS "province_name",
+            pr."Region" AS "region_name",
+            P_Goc."CreatedAt" AS "createdAt"
 
         FROM "Product" P_Goc
+
+        -- JOIN QUAN TRỌNG: Đảm bảo P_Goc LÀ MỘT GỐC HIỂN THỊ HỢP LỆ
+        JOIN valid_display_roots vdr ON P_Goc."ID" = vdr."ID"
+
+        -- Các JOIN phụ để lấy metadata
         LEFT JOIN "Store" s ON P_Goc."StoreID" = s."ID"
         LEFT JOIN "Province" pr ON P_Goc."ProvinceID" = pr."ID"
+        LEFT JOIN "ProductCategory" pc ON P_Goc."CategoryID" = pc."ID"
+        LEFT JOIN "ProductCategory" pc_parent ON pc."ParentId" = pc_parent."ID"
 
         WHERE
-            -- 1. Lọc Gốc (QĐ 6)
-            P_Goc."ProductType" IN ('ProductMaster', 'ProductDetail')
-            -- 2. Lọc Status (QĐ 1)
-            AND P_Goc."Status" = 'Approved'
+            -- 1. Lọc Status (QĐ 1)
+            P_Goc."Status" = 'Approved'
             AND P_Goc."IsActive" = true
             AND s."Status" = 'Approved'
         """
@@ -149,45 +202,18 @@ class SearchService:
         where_clauses = []
         params = {"query_embedding": str(list(query_embedding))}
 
-        # 3. Lọc khu vực (Giữ nguyên logic cũ)
+        # 2. Lọc khu vực (Giữ nguyên logic cũ)
         regions_to_filter = self._get_regions_for_sql_filter(query)
         if regions_to_filter:
             where_clauses.append('pr."RegionSpecified" = ANY(%(regions)s)')
             params["regions"] = regions_to_filter
             logger.info(f"Applying SQL filter for regions: {regions_to_filter}")
 
-        # 4. Lọc "Sống" (QĐ 1 - Logic từ Step 2.1)
-        live_check_sql = """
-        AND EXISTS (
-            WITH RECURSIVE product_tree AS (
-                SELECT "ID", "ParentID" FROM "Product" WHERE "ID" = P_Goc."ID"
-                UNION ALL
-                SELECT p."ID", p."ParentID" FROM "Product" p JOIN product_tree pt ON p."ParentID" = pt."ID"
-            ),
-            valid_leaf_skus AS (
-                SELECT 1
-                FROM product_tree t
-                JOIN "ProductVariant" pv ON t."ID" = pv."ID"
-                JOIN "Product" p_la ON t."ID" = p_la."ID"
-                WHERE
-                    p_la."ProductType" = 'ProductVariant'
-                    AND p_la."IsActive" = true
-                    AND pv."Quantity" > 0
-                    AND NOT EXISTS (
-                        SELECT 1 FROM "Product" p_child
-                        WHERE p_child."ParentID" = t."ID" AND p_child."ProductType" = 'ProductVariant'
-                    )
-                LIMIT 1
-            )
-            SELECT 1 FROM valid_leaf_skus
-        )
-        """
-
         final_sql = base_sql
         if where_clauses:
             final_sql += " AND " + " AND ".join(where_clauses)
 
-        final_sql += live_check_sql
+
         final_sql += " ORDER BY distance ASC;"
 
         # Step 3: Thực thi truy vấn và xử lý kết quả
@@ -202,11 +228,12 @@ class SearchService:
                 "product_images": row[3] or [],
                 "store_status": row[4],
                 "category_names": row[5] or [],
-                "sub_region_name": row[6]
+                "sub_region_name": row[6],
+                "province_name": row[7],
+                "region_name": row[8],
             })
 
         # Sắp xếp lại trong Python (để đảm bảo)
-        # GĐ 1 sắp xếp theo distance ASC (relevance_score ASC)
         candidates.sort(key=lambda x: x["relevance_score"], reverse=False)
 
         return candidates[:100]
@@ -307,17 +334,46 @@ class SearchService:
 
     def search_semantic(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
         """
-        Performs a pure semantic search.
-        (Chuyển đổi score GĐ 1 thành similarity)
+        Performs a pure semantic search, enriched with variant data.
         """
+        # Step 1: Lấy các ứng viên Gốc
         candidates = self._get_semantic_candidates(query)
-        # Chuyển đổi distance (ASC) thành similarity (DESC)
-        for p in candidates:
-            p["relevance_score"] = 1.0 - p["relevance_score"]
 
-        # Sắp xếp lại theo similarity (DESC)
-        candidates.sort(key=lambda x: x["relevance_score"], reverse=True)
-        return candidates[:limit]
+        if not candidates:
+            return []
+
+        logger.info(f"GĐ 1 (Semantic): Lấy được {len(candidates)} ứng viên. Bắt đầu trích xuất đặc trưng GĐ 2...")
+
+        enriched_results = []
+        for p_candidate in candidates:
+            root_id = p_candidate["id"]
+
+            agg_features = self._get_aggregated_sku_features(root_id)
+
+            enriched_product = {
+                "Id": p_candidate["id"],
+                "Name": p_candidate["name"],
+                "Price": agg_features["min_price"],
+                "Rating": agg_features["avg_rating"],
+
+                # Các trường .NET DTO mong đợi là snake_case (vì có [JsonPropertyName])
+                "review_count": agg_features["sum_review_count"],
+                "sale_count": agg_features["sum_sale_count"],
+                "store_status": p_candidate["store_status"],
+                "product_images": p_candidate["product_images"] or [],
+                "relevance_score": 1.0 - p_candidate["relevance_score"],
+                "category_names": p_candidate["category_names"] or [],
+                "province_name": p_candidate["province_name"],
+                "region_name": p_candidate["region_name"],
+                "sub_region_name": p_candidate["sub_region_name"]
+            }
+            enriched_results.append(enriched_product)
+
+        # Step 3: Sắp xếp lại theo similarity (DESC)
+        enriched_results.sort(key=lambda x: x["relevance_score"], reverse=True)
+
+        logger.info(f"GĐ 2 (Enrichment): Hoàn tất. Trả về {min(limit, len(enriched_results))} kết quả.")
+        return enriched_results[:limit]
 
 
     def search_with_ml(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
