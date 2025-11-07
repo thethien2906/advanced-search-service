@@ -2,12 +2,13 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import re
-from typing import List
+from typing import List, Optional # Thêm Optional
 from app.models.pydantic_models import EmbeddingRequest
 
 def remove_vietnamese_diacritics(text: str) -> str:
     """
     Loại bỏ dấu tiếng Việt khỏi một chuỗi văn bản.
+    (Giữ nguyên hàm này)
     """
     if not text:
         return ""
@@ -38,6 +39,7 @@ class EmbeddingService:
         """
         # The model is loaded a single time when the service starts
         self.model = SentenceTransformer('bkai-foundation-models/vietnamese-bi-encoder')
+        # Giữ lại logic truncate
         self.max_desc_words = 500
         self.max_story_words = 350
         print(f"Embedding model loaded. Description word limit set to {self.max_desc_words}.")
@@ -48,6 +50,7 @@ class EmbeddingService:
         by building a contextualized "super document" that includes both accented
         and unaccented versions of the text.
         """
+
         # 1. Intelligently truncate long text fields
         truncated_description = " ".join(data.product_description.split()[:self.max_desc_words]) if data.product_description else ""
         truncated_product_story = " ".join(data.product_story_detail.split()[:self.max_story_words]) if data.product_story_detail else ""
@@ -56,13 +59,22 @@ class EmbeddingService:
         # 2. Build the "super document" with contextual prefixes and weighting
         parts = []
 
-        # --- Emphasize Product Name (Weight x3) ---
+        # --- Emphasize Product Name (Weight x3)
         if data.product_name:
             parts.append(f"sản phẩm {data.product_name}")
             parts.append(f"tên {data.product_name}")
             parts.append(data.product_name)
 
+        # --- Emphasize Category & Hashtags (Weight x2)
+        if data.parent_category_name:
+            parts.append(f"danh mục chính {data.parent_category_name}")
+        if data.category_name:
+            parts.append(f"loại sản phẩm {data.category_name}")
+        if data.hashtag_names:
+            parts.append(f"từ khóa {', '.join(data.hashtag_names)}")
+
         # --- Emphasize Location (Weight x2) ---
+        # (Thêm 3 trường location từ Step 1.1)
         if data.province_name:
             parts.append(f"tỉnh {data.province_name}")
             parts.append(f"xuất xứ {data.province_name}")
@@ -73,27 +85,27 @@ class EmbeddingService:
             parts.append(f"khu vực {data.sub_region_name}")
             parts.append(f"đặc sản {data.sub_region_name}")
 
-        # --- Emphasize Product Description (Weight x2) ---
+        # --- Add other fields (Weight x1) ---
         if truncated_description:
-            parts.append(f"mô tả: {truncated_description}")
-            parts.append(f"{truncated_description}")
-        # --- Add other fields with single context prefix ---
-        if data.product_category_names:
-            parts.append(f"danh mục: {', '.join(data.product_category_names)}")
+            parts.append(f"mô tả {truncated_description}")
+
+        if data.product_material:
+            parts.append(f"chất liệu {data.product_material}")
+
+        if data.product_type:
+            parts.append(f"phân loại {data.product_type}")
+
         if data.product_story_title:
-            parts.append(f"câu chuyện: {data.product_story_title}")
+            parts.append(f"câu chuyện {data.product_story_title}")
+
         if truncated_product_story:
-            parts.append(f"chi tiết câu chuyện: {truncated_product_story}")
+            parts.append(f"chi tiết câu chuyện {truncated_product_story}")
+
         if data.store_name:
-            parts.append(f"cửa hàng: {data.store_name}")
+            parts.append(f"cửa hàng {data.store_name}")
+
         if truncated_store_story:
-            parts.append(f"câu chuyện cửa hàng: {truncated_store_story}")
-        if data.product_made_by:
-            parts.append(f"thành phần chính: {data.product_made_by}")
-        if data.product_type_name:
-            parts.append(f"{data.product_made_by}")
-        if data.variant_names:
-            parts.append(f"phiên bản: {', '.join(data.variant_names)}")
+            parts.append(f"câu chuyện cửa hàng {truncated_store_story}")
 
         # 3. Join all accented parts into a single text document
         accented_text = ". ".join(filter(None, parts))
