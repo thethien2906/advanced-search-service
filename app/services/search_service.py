@@ -105,9 +105,7 @@ class SearchService:
     def _get_semantic_candidates(self, query: str) -> List[Dict[str, Any]]:
         """
         Triển khai logic "SKU-Driven"
-        1. Tìm tất cả "SKU Lá" hợp lệ (có thể bán).
-        2. Leo ngược cây từ các SKU đó để tìm "Gốc Hiển thị" (Display Root).
-        3. Chỉ thực hiện vector search trên các "Gốc Hiển thị" hợp lệ này.
+        (Hàm này đã được sửa để thêm 'createdAt' vào candidates)
         """
         if not self.model:
             raise RuntimeError("Search model is not available.")
@@ -116,37 +114,30 @@ class SearchService:
         query_embedding = self.model.encode(expanded_query, normalize_embeddings=True)
 
         base_sql = """
-        -- CTE 1: Tìm tất cả "SKU Lá" hợp lệ (định nghĩa "Thực thể Bán được")
+        -- (Giữ nguyên các CTE 1, 2, 3) ...
         WITH RECURSIVE valid_leaf_skus AS (
             SELECT
                 p_leaf."ID",
                 p_leaf."ParentID"
             FROM "Product" p_leaf
-            -- Phải có thông tin giá/kho hàng
             JOIN "ProductVariant" pv ON p_leaf."ID" = pv."ID"
             WHERE
                 p_leaf."ProductType" = 'ProductVariant'
                 AND p_leaf."IsActive" = true
                 AND pv."Quantity" > 0
-                -- Phải là "lá" (không có con nào là ProductVariant) [cite: 41, 49]
                 AND NOT EXISTS (
                     SELECT 1 FROM "Product" p_child
                     WHERE p_child."ParentID" = p_leaf."ID" AND p_child."ProductType" = 'ProductVariant'
                 )
         ),
-        -- CTE 2: "Leo ngược" từ SKU Lá lên để tìm "Gốc Hiển thị"
         display_root_cte AS (
-            -- Mỏ neo: Bắt đầu từ Cha của SKU Lá
             SELECT
                 p_parent."ID",
                 p_parent."ParentID",
                 p_parent."ProductType"
             FROM "Product" p_parent
             JOIN valid_leaf_skus vls ON p_parent."ID" = vls."ParentID"
-
             UNION ALL
-
-            -- Đệ quy: Tiếp tục leo lên chừng nào vẫn là ProductVariant [cite: 55]
             SELECT
                 p_parent."ID",
                 p_parent."ParentID",
@@ -156,8 +147,6 @@ class SearchService:
             WHERE
                 dr."ProductType" = 'ProductVariant'
         ),
-        -- CTE 3: Lấy danh sách Gốc Hiển thị (Display Root) duy nhất
-        -- Đây là các nút dừng (Master/Detail) [cite: 56]
         valid_display_roots AS (
             SELECT DISTINCT "ID"
             FROM display_root_cte
@@ -168,53 +157,38 @@ class SearchService:
         SELECT
             P_Goc."ID",
             (P_Goc."Embedding" <=> %(query_embedding)s) AS distance,
-
-            -- Các trường GĐ 1 (đã fix ở lần trước)
             P_Goc."Name" AS "name",
             P_Goc."ProductImages" AS "product_images",
             s."Status" AS "store_status",
             ARRAY_REMOVE(ARRAY[pc."Name", pc_parent."Name"], NULL) as "category_names",
-
-            -- Các trường bị null (sẽ giải thích ở dưới)
             pr."RegionSpecified" AS "sub_region_name",
             pr."Name" AS "province_name",
             pr."Region" AS "region_name",
-            P_Goc."CreatedAt" AS "createdAt"
+            P_Goc."CreatedAt" AS "createdAt" -- Cột này là index 9
 
         FROM "Product" P_Goc
-
-        -- JOIN QUAN TRỌNG: Đảm bảo P_Goc LÀ MỘT GỐC HIỂN THỊ HỢP LỆ
         JOIN valid_display_roots vdr ON P_Goc."ID" = vdr."ID"
-
-        -- Các JOIN phụ để lấy metadata
         LEFT JOIN "Store" s ON P_Goc."StoreID" = s."ID"
         LEFT JOIN "Province" pr ON P_Goc."ProvinceID" = pr."ID"
         LEFT JOIN "ProductCategory" pc ON P_Goc."CategoryID" = pc."ID"
         LEFT JOIN "ProductCategory" pc_parent ON pc."ParentId" = pc_parent."ID"
-
         WHERE
-            -- 1. Lọc Status (QĐ 1)
             P_Goc."Status" = 'Approved'
             AND P_Goc."IsActive" = true
             AND s."Status" = 'Approved'
         """
-
         where_clauses = []
         params = {"query_embedding": str(list(query_embedding))}
-
-        # 2. Lọc khu vực (Giữ nguyên logic cũ)
         regions_to_filter = self._get_regions_for_sql_filter(query)
         if regions_to_filter:
             where_clauses.append('pr."RegionSpecified" = ANY(%(regions)s)')
             params["regions"] = regions_to_filter
             logger.info(f"Applying SQL filter for regions: {regions_to_filter}")
-
         final_sql = base_sql
         if where_clauses:
             final_sql += " AND " + " AND ".join(where_clauses)
-
-
         final_sql += " ORDER BY distance ASC;"
+
 
         # Step 3: Thực thi truy vấn và xử lý kết quả
         db_results = self.db_handler.execute_query_with_retry(final_sql, params)
@@ -231,6 +205,7 @@ class SearchService:
                 "sub_region_name": row[6],
                 "province_name": row[7],
                 "region_name": row[8],
+                "createdAt": row[9]  # <-- FIX 2.1: THÊM LẠI TRƯỜNG createdAt (từ row[9])
             })
 
         # Sắp xếp lại trong Python (để đảm bảo)
@@ -238,12 +213,12 @@ class SearchService:
 
         return candidates[:100]
 
+    # ... (Giữ nguyên hàm _get_aggregated_sku_features và _get_is_certified) ...
+
     def _get_aggregated_sku_features(self, root_id: UUID) -> Dict[str, Any]:
         """
-        Truy vấn các đặc trưng tổng hợp (SUM, AVG, MIN) từ tất cả
-        "SKU Lá Hợp Lệ" thuộc về một "Gốc Hiển thị".
+        (Giữ nguyên hàm này)
         """
-        #
         sql = """
         WITH RECURSIVE product_tree AS (
             SELECT "ID", "ParentID" FROM "Product" WHERE "ID" = %(root_id)s
@@ -281,7 +256,7 @@ class SearchService:
             if agg_results:
                 row = agg_results[0]
                 return {
-                    "min_price": row[0],
+                    "min_price": row[0], # Đây là kiểu Decimal
                     "sum_sale_count": row[1],
                     "avg_rating": float(row[2]),
                     "sum_review_count": row[3]
@@ -289,7 +264,6 @@ class SearchService:
         except Exception as e:
             logger.error(f"Lỗi khi lấy GĐ 2 (agg features) cho Gốc {root_id}: {e}", exc_info=True)
 
-        # Trả về giá trị mặc định nếu lỗi
         return {
             "min_price": 0,
             "sum_sale_count": 0,
@@ -299,13 +273,10 @@ class SearchService:
 
     def _get_is_certified(self, root_id: UUID) -> bool:
         """
-        Kiểm tra xem "Gốc Master" (L1) của sản phẩm có chứng nhận
-        đã được 'Approved' hay không.
+        (Giữ nguyên hàm này)
         """
-        #
         sql = """
         WITH RECURSIVE master_root AS (
-            -- 1. Tìm ngược lên đến gốc L1
             SELECT "ID", "ParentID" FROM "Product" WHERE "ID" = %(root_id)s
             UNION ALL
             SELECT p."ID", p."ParentID" FROM "Product" p
@@ -314,7 +285,6 @@ class SearchService:
         l1_root AS (
             SELECT "ID" FROM master_root WHERE "ParentID" IS NULL
         )
-        -- 2. Kiểm tra chứng nhận 'Approved' trên gốc L1 đó
         SELECT EXISTS (
             SELECT 1 FROM "ProductCertificate" pc
             JOIN l1_root ON pc."ProductID" = l1_root."ID"
@@ -328,13 +298,12 @@ class SearchService:
                 return cert_result[0][0]
         except Exception as e:
             logger.error(f"Lỗi khi lấy GĐ 2 (is_certified) cho Gốc {root_id}: {e}", exc_info=True)
-
         return False
 
 
     def search_semantic(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
         """
-        Performs a pure semantic search, enriched with variant data.
+        (Hàm này đã được sửa để ép kiểu 'Price' và thêm 'CreatedAt')
         """
         # Step 1: Lấy các ứng viên Gốc
         candidates = self._get_semantic_candidates(query)
@@ -349,12 +318,23 @@ class SearchService:
             root_id = p_candidate["id"]
 
             agg_features = self._get_aggregated_sku_features(root_id)
+            created_at_iso = None
 
+            # Kiểm tra xem p_candidate["createdAt"] có tồn tại, không None,
+            # và là một đối tượng datetime (có hàm isoformat)
+            if p_candidate.get("createdAt") and hasattr(p_candidate["createdAt"], 'isoformat'):
+                try:
+                    # Dùng .isoformat() để CHUẨN HÓA CÓ CHỮ 'T'
+                    # Kết quả sẽ là: "2025-09-21T01:13:16.222527+00:00"
+                    created_at_iso = p_candidate["createdAt"].isoformat()
+                except Exception as e:
+                    logger.warning(f"Không thể format iso cho ngày: {p_candidate['createdAt']}. Lỗi: {e}")
             enriched_product = {
+                # Lưu ý: Key phải là PascalCase để khớp với C# DTO
                 "Id": p_candidate["id"],
                 "Name": p_candidate["name"],
-                "Price": agg_features["min_price"],
-                "Rating": agg_features["avg_rating"],
+                "Price": float(agg_features["min_price"]), # <-- FIX 1: ÉP KIỂU SANG FLOAT
+                "Rating": agg_features["avg_rating"], # Đã là float
 
                 # Các trường .NET DTO mong đợi là snake_case (vì có [JsonPropertyName])
                 "review_count": agg_features["sum_review_count"],
@@ -365,7 +345,10 @@ class SearchService:
                 "category_names": p_candidate["category_names"] or [],
                 "province_name": p_candidate["province_name"],
                 "region_name": p_candidate["region_name"],
-                "sub_region_name": p_candidate["sub_region_name"]
+                "sub_region_name": p_candidate["sub_region_name"],
+
+                # <-- FIX 2.2: THÊM TRƯỜNG CreatedAt (key là PascalCase)
+                "CreatedAt": created_at_iso
             }
             enriched_results.append(enriched_product)
 

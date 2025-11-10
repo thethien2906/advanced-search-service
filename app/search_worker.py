@@ -88,6 +88,9 @@ def main():
                 "request_id": request_id,
                 "products": search_results
             }
+            logger.info(f"--- GỬI PAYLOAD LÊN KAFKA (RequestID: {request_id}) ---")
+            logger.info(json.dumps(result_payload, default=str, indent=4, ensure_ascii=False))
+
             producer.send(settings.SEARCH_RESULTS_TOPIC, value=result_payload)
             logger.info(f"📤 Sent {len(search_results)} results to '{settings.SEARCH_RESULTS_TOPIC}' for RequestID: {request_id}")
 
