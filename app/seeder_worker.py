@@ -4,6 +4,7 @@ import logging
 from kafka import KafkaConsumer
 from app.core.config import settings
 from app.scripts import seed_data # Import trực tiếp module
+from app.scripts import seed_documents # Import module seed_documents
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -37,6 +38,14 @@ def main():
             logger.info("--- ✅ Script seed_data đã hoàn thành. ---")
         except Exception as e:
             logger.error(f"❌ Lỗi khi đang chạy seed_data: {e}", exc_info=True)
+
+        # Gọi hàm chính của seed_documents
+        try:
+            logger.info("--- Bắt đầu chạy script seed_documents ---")
+            seed_documents.embed_existing_documents()
+            logger.info("--- ✅ Script seed_documents đã hoàn thành. ---")
+        except Exception as e:
+            logger.error(f"❌ Lỗi khi đang chạy seed_documents: {e}", exc_info=True)
 
         # Nhiệm vụ đã xong, thoát khỏi vòng lặp và kết thúc worker
         break

@@ -71,22 +71,36 @@ def main():
             request_id = request_data.get("request_id") # Nhận request_id từ message
             user_id = request_data.get("user_id") # Nhận user_id
             limit = request_data.get("limit", 20)
+            
+            # [NEW] Lấy loại tìm kiếm (Mặc định là PRODUCT để tương thích ngược)
+            search_type = request_data.get("search_type", "PRODUCT").upper()
 
             if not query_text or not request_id:
                 logger.warning(f"⚠️ Received message with missing 'query_text' or 'request_id'. Skipping.")
                 continue
 
-            logger.info(f"📬 Received search request | RequestID: {request_id} | Query: '{query_text}'")
+            logger.info(f"📩 Nhận Request | ID: {request_id} | Type: {search_type} | Query: '{query_text}'")
 
-            # Gọi logic tìm kiếm từ SearchService
-            search_results = search_service.search_semantic(query=query_text, limit=limit)
+            search_results = []
+
+            # 2. [NEW] Routing Logic
+            if search_type == "DOCUMENT":
+                # Gọi logic tìm tài liệu
+                search_results = search_service.search_documents(query=query_text, limit=limit)
+                logger.info(f"📄 Tìm thấy {len(search_results)} tài liệu.")
+            else:
+                # Gọi logic tìm sản phẩm (Product) - Giữ nguyên logic cũ
+                # Có thể dùng search_with_ml hoặc search_semantic tùy cấu hình
+                search_results = search_service.search_semantic(query=query_text, limit=limit)
+                logger.info(f"🛍️ Tìm thấy {len(search_results)} sản phẩm.")
 
             # --- GIAI ĐOẠN 3: GỬI KẾT QUẢ VÀ LOGGING ---
 
             # 1. Gửi kết quả tìm kiếm vào topic 'search_results'
             result_payload = {
                 "request_id": request_id,
-                "products": search_results
+                "type": search_type,      # [NEW] Trả về type để client dễ xử lý
+                "results": search_results # Đổi key chung là "results" thay vì "products"
             }
             logger.info(f"--- GỬI PAYLOAD LÊN KAFKA (RequestID: {request_id}) ---")
             logger.info(json.dumps(result_payload, default=str, indent=4, ensure_ascii=False))

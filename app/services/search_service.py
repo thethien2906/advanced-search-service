@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.services.database import DatabaseHandler
 from app.services.ranker import XGBoostRanker
 from app.services.feature_extractor import extract_features, remove_vietnamese_diacritics
+from app.services.embedding_service import EmbeddingService
 from app.services.search_constants import (
     QUERY_EXPANSION_MAP,
     REGION_HIERARCHY,
@@ -556,3 +557,54 @@ class SearchService:
                 p["relevance_score"] = 1.0 - p["relevance_score"]
             candidates.sort(key=lambda x: x["relevance_score"], reverse=True)
             return candidates[:limit]
+
+    def search_documents(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """
+        Tìm kiếm tài liệu dựa trên độ tương đồng vector (Cosine Similarity).
+        """
+        if not self.model:
+            raise RuntimeError("Model chưa được load.")
+
+        # 1. Tạo vector cho câu query (Dùng logic mở rộng query nếu cần)
+        # Ở đây dùng simple query embedding
+        embedding_service = EmbeddingService() # Hoặc inject vào __init__ để tối ưu
+        query_vector = embedding_service.create_text_embedding(query)
+        
+        # 2. SQL Query
+        sql = """
+        SELECT
+            "ID",
+            "Title",
+            "Content",
+            "Slug",
+            ("Embedding" <=> %(query_vector)s) as distance
+        FROM "Document"
+        WHERE "IsPublished" = true 
+          AND "Embedding" IS NOT NULL
+        ORDER BY distance ASC
+        LIMIT %(limit)s;
+        """
+        
+        params = {
+            "query_vector": str(query_vector),
+            "limit": limit
+        }
+
+        try:
+            results = self.db_handler.execute_query_with_retry(sql, params)
+            
+            # 3. Map kết quả
+            documents = []
+            for row in results:
+                documents.append({
+                    "Id": row[0],              # UUID
+                    "Title": row[1],
+                    "Content": row[2][:500] if row[2] else "",   # Cắt ngắn nội dung để preview
+                    "Slug": row[3],
+                    "RelevanceScore": 1 - float(row[4]), # Convert Distance -> Similarity
+                    "Type": "Document"
+                })
+            return documents
+        except Exception as e:
+            logger.error(f"Lỗi khi tìm kiếm Document: {e}", exc_info=True)
+            return []

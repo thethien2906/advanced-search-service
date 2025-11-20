@@ -132,3 +132,25 @@ class EmbeddingService:
         normalized_vector = vector / norm
 
         return normalized_vector.tolist()
+
+    def create_text_embedding(self, text: str) -> List[float]:
+        """
+        Tạo embedding cho query hoặc nội dung document.
+        Xử lý: Kết hợp text gốc + text không dấu để model hiểu ngữ nghĩa tốt hơn.
+        """
+        if not text:
+            return [0.0] * 768
+
+        # 1. Tiền xử lý: Gộp có dấu và không dấu
+        unaccented_text = remove_vietnamese_diacritics(text)
+        combined_text = f"{text}. {unaccented_text}"
+        
+        # 2. Encode
+        vector = self.model.encode(combined_text)
+
+        # 3. Chuẩn hóa (L2 Norm)
+        norm = np.linalg.norm(vector)
+        if norm == 0:
+            return [0.0] * len(vector)
+        
+        return (vector / norm).tolist()
