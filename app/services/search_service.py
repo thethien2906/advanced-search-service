@@ -101,6 +101,115 @@ class SearchService:
                 return sub_regions
 
         return None
+    def _get_popular_candidates(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """
+        Lấy danh sách sản phẩm phổ biến (bán chạy nhất & rating cao nhất)
+        khi người dùng không nhập từ khóa.
+        """
+        # Sử dụng CTE tương tự như search semantic để đảm bảo lấy đúng Root Product
+        sql = """
+        WITH RECURSIVE valid_leaf_skus AS (
+            SELECT
+                p_leaf."ID",
+                p_leaf."ParentID",
+                pv."SaleCount",
+                pv."Rating"
+            FROM "Product" p_leaf
+            JOIN "ProductVariant" pv ON p_leaf."ID" = pv."ID"
+            WHERE
+                p_leaf."ProductType" = 'ProductVariant'
+                AND p_leaf."IsActive" = true
+                AND pv."Quantity" > 0
+                AND NOT EXISTS (
+                    SELECT 1 FROM "Product" p_child
+                    WHERE p_child."ParentID" = p_leaf."ID" AND p_child."ProductType" = 'ProductVariant'
+                )
+        ),
+        -- Truy ngược từ Leaf lên Root để tính tổng
+        product_tree AS (
+            SELECT
+                vls."ID" as "LeafID",
+                vls."ParentID",
+                vls."SaleCount",
+                vls."Rating",
+                p_parent."ID" as "RootID",
+                p_parent."ProductType"
+            FROM valid_leaf_skus vls
+            JOIN "Product" p_parent ON vls."ParentID" = p_parent."ID"
+
+            UNION ALL
+
+            SELECT
+                pt."LeafID",
+                pt."ParentID",
+                pt."SaleCount",
+                pt."Rating",
+                p_grand."ID" as "RootID",
+                p_grand."ProductType"
+            FROM product_tree pt
+            JOIN "Product" p_grand ON pt."RootID" = p_grand."ParentID"
+        ),
+        -- Chỉ giữ lại các Root là ProductMaster/ProductDetail (không phải Variant trung gian)
+        root_stats AS (
+            SELECT
+                "RootID",
+                SUM("SaleCount") as "TotalSales",
+                AVG("Rating") as "AvgRating"
+            FROM product_tree
+            WHERE "ProductType" != 'ProductVariant'
+            GROUP BY "RootID"
+        )
+        SELECT
+            P_Goc."ID",
+            0.0 AS distance, -- Mặc định distance = 0 cho top products
+            P_Goc."Name" AS "name",
+            P_Goc."ProductImages" AS "product_images",
+            s."Status" AS "store_status",
+            ARRAY_REMOVE(ARRAY[pc."Name", pc_parent."Name"], NULL) as "category_names",
+            pr."RegionSpecified" AS "sub_region_name",
+            pr."Name" AS "province_name",
+            pr."Region" AS "region_name",
+            P_Goc."CreatedAt" AS "createdAt"
+        FROM root_stats rs
+        JOIN "Product" P_Goc ON rs."RootID" = P_Goc."ID"
+        LEFT JOIN "Store" s ON P_Goc."StoreID" = s."ID"
+        LEFT JOIN "Province" pr ON P_Goc."ProvinceID" = pr."ID"
+        LEFT JOIN "ProductCategory" pc ON P_Goc."CategoryID" = pc."ID"
+        LEFT JOIN "ProductCategory" pc_parent ON pc."ParentId" = pc_parent."ID"
+        WHERE
+            P_Goc."Status" = 'Approved'
+            AND P_Goc."IsActive" = true
+            AND s."Status" = 'Approved'
+        ORDER BY rs."TotalSales" DESC, rs."AvgRating" DESC
+        LIMIT %(limit)s;
+        """
+
+        params = {"limit": limit}
+
+        try:
+            logger.info("Executing Popular Products Query for empty search...")
+            db_results = self.db_handler.execute_query_with_retry(sql, params)
+
+            candidates = []
+            for row in db_results:
+                candidates.append({
+                    "id": row[0],
+                    "relevance_score": 1.0, # Điểm tối đa vì đây là suggestion
+                    "name": row[2],
+                    "product_images": row[3] or [],
+                    "store_status": row[4],
+                    "category_names": row[5] or [],
+                    "sub_region_name": row[6],
+                    "province_name": row[7],
+                    "region_name": row[8],
+                    "createdAt": row[9]
+                })
+            return candidates
+        except Exception as e:
+            logger.error(f"Error fetching popular candidates: {e}", exc_info=True)
+            return []
+
+
 
     def _get_semantic_candidates(self, query: str) -> List[Dict[str, Any]]:
         """
@@ -205,7 +314,7 @@ class SearchService:
                 "sub_region_name": row[6],
                 "province_name": row[7],
                 "region_name": row[8],
-                "createdAt": row[9]  # <-- FIX 2.1: THÊM LẠI TRƯỜNG createdAt (từ row[9])
+                "createdAt": row[9]
             })
 
         # Sắp xếp lại trong Python (để đảm bảo)
@@ -213,7 +322,6 @@ class SearchService:
 
         return candidates[:100]
 
-    # ... (Giữ nguyên hàm _get_aggregated_sku_features và _get_is_certified) ...
 
     def _get_aggregated_sku_features(self, root_id: UUID) -> Dict[str, Any]:
         """
@@ -303,11 +411,14 @@ class SearchService:
 
     def search_semantic(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
         """
-        (Hàm này đã được sửa để ép kiểu 'Price' và thêm 'CreatedAt')
         """
         # Step 1: Lấy các ứng viên Gốc
-        candidates = self._get_semantic_candidates(query)
-
+        # Kiểm tra query rỗng
+        if not query or not query.strip():
+            logger.info("Query is empty. Fetching popular products instead.")
+            candidates = self._get_popular_candidates(limit)
+        else:
+            candidates = self._get_semantic_candidates(query)
         if not candidates:
             return []
 
@@ -341,7 +452,8 @@ class SearchService:
                 "sale_count": agg_features["sum_sale_count"],
                 "store_status": p_candidate["store_status"],
                 "product_images": p_candidate["product_images"] or [],
-                "relevance_score": 1.0 - p_candidate["relevance_score"],
+                # "relevance_score": 1.0 - p_candidate["relevance_score"],
+                "relevance_score": p_candidate["relevance_score"],
                 "category_names": p_candidate["category_names"] or [],
                 "province_name": p_candidate["province_name"],
                 "region_name": p_candidate["region_name"],
@@ -364,6 +476,12 @@ class SearchService:
         Thực hiện tìm kiếm GĐ 1, sau đó gọi N+1 query để lấy
         đặc trưng tổng hợp (GĐ 2) và xếp hạng lại bằng ML.
         """
+        if not query or not query.strip():
+            logger.info("ML Search: Query is empty. Falling back to popular products (skipping ML ranking).")
+            # Với query rỗng, ta không cần chạy qua ML Ranker vì không có ngữ cảnh "query" để khớp
+            # Ta trả về trực tiếp kết quả enriched (đã sort theo Sale/Rating)
+            return self.search_semantic(query, limit)
+
         # candidates chứa (id, relevance_score (là distance), name, product_images, store_status, category_names, sub_region_name)
         candidates = self._get_semantic_candidates(query) #
 
