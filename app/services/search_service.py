@@ -194,7 +194,7 @@ class SearchService:
             for row in db_results:
                 candidates.append({
                     "id": row[0],
-                    "relevance_score": 1.0, # Điểm tối đa vì đây là suggestion
+                    "relevance_score": 0.0, # Đặt là 0.0 để tương thích logic tính distance
                     "name": row[2],
                     "product_images": row[3] or [],
                     "store_status": row[4],
@@ -452,8 +452,7 @@ class SearchService:
                 "sale_count": agg_features["sum_sale_count"],
                 "store_status": p_candidate["store_status"],
                 "product_images": p_candidate["product_images"] or [],
-                # "relevance_score": 1.0 - p_candidate["relevance_score"],
-                "relevance_score": p_candidate["relevance_score"],
+                "relevance_score": 1.0 - p_candidate["relevance_score"],
                 "category_names": p_candidate["category_names"] or [],
                 "province_name": p_candidate["province_name"],
                 "region_name": p_candidate["region_name"],
