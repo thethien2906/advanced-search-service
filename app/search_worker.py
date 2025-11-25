@@ -71,11 +71,11 @@ def main():
             request_id = request_data.get("request_id") # Nhận request_id từ message
             user_id = request_data.get("user_id") # Nhận user_id
             limit = request_data.get("limit", 20)
-            
+
             # [NEW] Lấy loại tìm kiếm (Mặc định là PRODUCT để tương thích ngược)
             search_type = request_data.get("search_type", "PRODUCT").upper()
 
-            if not query_text or not request_id:
+            if query_text is None or not request_id:
                 logger.warning(f"⚠️ Received message with missing 'query_text' or 'request_id'. Skipping.")
                 continue
 
