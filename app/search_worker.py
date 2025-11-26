@@ -67,7 +67,7 @@ def main():
     for message in consumer:
         try:
             request_data = message.value
-            query_text = request_data.get("query_text")
+            query_text = request_data.get("query_text") or ""  # Cho phép None/rỗng, search_service sẽ handle
             request_id = request_data.get("request_id") # Nhận request_id từ message
             user_id = request_data.get("user_id") # Nhận user_id
             limit = request_data.get("limit", 20)
@@ -75,11 +75,14 @@ def main():
             # [NEW] Lấy loại tìm kiếm (Mặc định là PRODUCT để tương thích ngược)
             search_type = request_data.get("search_type", "PRODUCT").upper()
 
-            if query_text is None or not request_id:
-                logger.warning(f"⚠️ Received message with missing 'query_text' or 'request_id'. Skipping.")
+            # Chỉ validate request_id (bắt buộc), query_text có thể rỗng (search_service sẽ search theo xu hướng)
+            if not request_id:
+                logger.warning(f"⚠️ Received message with missing 'request_id'. Skipping.")
                 continue
 
-            logger.info(f"📩 Nhận Request | ID: {request_id} | Type: {search_type} | Query: '{query_text}'")
+            # Log query text hoặc thông báo search theo xu hướng nếu rỗng
+            query_display = query_text if query_text.strip() else "[Empty - Trending Search]"
+            logger.info(f"📩 Nhận Request | ID: {request_id} | Type: {search_type} | Query: '{query_display}'")
 
             search_results = []
 
@@ -105,11 +108,14 @@ def main():
             logger.info(f"--- GỬI PAYLOAD LÊN KAFKA (RequestID: {request_id}) ---")
             logger.info(json.dumps(result_payload, default=str, indent=4, ensure_ascii=False))
 
-            producer.send(settings.SEARCH_RESULTS_TOPIC, value=result_payload)
+            # producer.send(settings.SEARCH_RESULTS_TOPIC, value=result_payload)
+            future = producer.send(settings.SEARCH_RESULTS_TOPIC, value=result_payload)
+            future.add_callback(lambda metadata: logger.info(f"✅ Message sent successfully to topic={metadata.topic}, partition={metadata.partition}, offset={metadata.offset}"))
+            future.add_errback(lambda error: logger.error(f"❌ Failed to send message: {error}"))
             logger.info(f"📤 Sent {len(search_results)} results to '{settings.SEARCH_RESULTS_TOPIC}' for RequestID: {request_id}")
 
             # 2. Gửi dữ liệu log vào topic 'search_logging_events'
-            ranked_ids = [result['Id'] for result in search_results]
+            ranked_ids = [result['id'] for result in search_results] 
             log_payload = {
                 "search_id": str(uuid.uuid4()),
                 "user_id": user_id,
