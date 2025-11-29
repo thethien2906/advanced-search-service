@@ -256,8 +256,8 @@ class SearchService:
     # ============================================================================
     # EXISTING METHODS (kept for compatibility)
     # ============================================================================
-    def _get_popular_candidates(self, limit: int = 20) -> List[Dict[str, Any]]:
-        """Get popular products (unchanged)."""
+    def _get_popular_candidates(self, limit: int = 20, category_filter_ids: Optional[List[UUID]] = None) -> List[Dict[str, Any]]:
+        """Get popular products with optional category filter."""
         sql = """
         WITH RECURSIVE valid_leaf_skus AS (
             SELECT
@@ -330,11 +330,21 @@ class SearchService:
             P_Goc."Status" = 'Approved'
             AND P_Goc."IsActive" = true
             AND s."Status" = 'Approved'
-        ORDER BY rs."TotalSales" DESC, rs."AvgRating" DESC
-        LIMIT %(limit)s;
         """
 
+        where_clauses = []
         params = {"limit": limit}
+        
+        # Filter by category IDs if provided
+        if category_filter_ids:
+            category_ids_str = [str(cid) for cid in category_filter_ids]
+            where_clauses.append('(pc."ID" = ANY(%(category_ids)s::uuid[]) OR pc_parent."ID" = ANY(%(category_ids)s::uuid[]))')
+            params["category_ids"] = category_ids_str
+        
+        if where_clauses:
+            sql += " AND " + " AND ".join(where_clauses)
+        
+        sql += " ORDER BY rs.\"TotalSales\" DESC, rs.\"AvgRating\" DESC LIMIT %(limit)s;"
 
         try:
             db_results = self.db_handler.execute_query_with_retry(sql, params)
@@ -357,8 +367,8 @@ class SearchService:
             logger.error(f"Error fetching popular candidates: {e}", exc_info=True)
             return []
 
-    def _get_semantic_candidates(self, query: str) -> List[Dict[str, Any]]:
-        """Get semantic search candidates (unchanged)."""
+    def _get_semantic_candidates(self, query: str, category_filter_ids: Optional[List[UUID]] = None) -> List[Dict[str, Any]]:
+        """Get semantic search candidates with optional category filter."""
         if not self.model:
             raise RuntimeError("Search model not available.")
 
@@ -431,6 +441,12 @@ class SearchService:
         where_clauses = []
         params = {"query_embedding": str(list(query_embedding))}
         
+        # Filter by category IDs if provided
+        if category_filter_ids:
+            category_ids_str = [str(cid) for cid in category_filter_ids]
+            where_clauses.append('(pc."ID" = ANY(%(category_ids)s::uuid[]) OR pc_parent."ID" = ANY(%(category_ids)s::uuid[]))')
+            params["category_ids"] = category_ids_str
+        
         regions_to_filter = self._get_regions_for_sql_filter(query)
         if regions_to_filter:
             where_clauses.append('pr."RegionSpecified" = ANY(%(regions)s)')
@@ -464,7 +480,7 @@ class SearchService:
     # ============================================================================
     # 🚀 OPTIMIZED: search_semantic - Uses batch queries
     # ============================================================================
-    def search_semantic(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+    def search_semantic(self, query: str, limit: int = 20, category_filter_ids: Optional[List[UUID]] = None) -> List[Dict[str, Any]]:
         """
         Optimized semantic search using batch queries.
         
@@ -474,9 +490,9 @@ class SearchService:
         # Get candidates
         if not query or not query.strip():
             logger.info("Empty query. Fetching popular products.")
-            candidates = self._get_popular_candidates(limit)
+            candidates = self._get_popular_candidates(limit, category_filter_ids)
         else:
-            candidates = self._get_semantic_candidates(query)
+            candidates = self._get_semantic_candidates(query, category_filter_ids)
 
         if not candidates:
             return []
@@ -531,7 +547,7 @@ class SearchService:
     # ============================================================================
     # �� OPTIMIZED: search_with_ml - Uses batch queries
     # ============================================================================
-    def search_with_ml(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
+    def search_with_ml(self, query: str, limit: int = 20, category_filter_ids: Optional[List[UUID]] = None) -> List[Dict[str, Any]]:
         """
         Optimized ML search using batch queries.
         
@@ -541,9 +557,9 @@ class SearchService:
         """
         if not query or not query.strip():
             logger.info("Empty query. Using popular products (no ML).")
-            return self.search_semantic(query, limit)
+            return self.search_semantic(query, limit, category_filter_ids)
 
-        candidates = self._get_semantic_candidates(query)
+        candidates = self._get_semantic_candidates(query, category_filter_ids)
         if not candidates:
             return []
 

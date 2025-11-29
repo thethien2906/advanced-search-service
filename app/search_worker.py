@@ -6,6 +6,7 @@ from kafka.errors import KafkaError
 from app.services.search_service import SearchService
 from app.core.config import settings
 import uuid
+from uuid import UUID
 from datetime import datetime, timezone
 import os
 
@@ -75,6 +76,15 @@ def main():
             # [NEW] Lấy loại tìm kiếm (Mặc định là PRODUCT để tương thích ngược)
             search_type = request_data.get("search_type", "PRODUCT").upper()
 
+            # Lấy category_filter_ids từ request (list of UUID strings)
+            category_filter_ids = None
+            if "category_filter_ids" in request_data and request_data["category_filter_ids"]:
+                try:
+                    category_filter_ids = [UUID(cid) for cid in request_data["category_filter_ids"]]
+                    logger.info(f"📋 Category filters: {len(category_filter_ids)} categories")
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"⚠️ Invalid category_filter_ids format: {e}. Ignoring category filter.")
+
             # Chỉ validate request_id (bắt buộc), query_text có thể rỗng (search_service sẽ search theo xu hướng)
             if not request_id:
                 logger.warning(f"⚠️ Received message with missing 'request_id'. Skipping.")
@@ -94,7 +104,7 @@ def main():
             else:
                 # Gọi logic tìm sản phẩm (Product) - Giữ nguyên logic cũ
                 # Có thể dùng search_with_ml hoặc search_semantic tùy cấu hình
-                search_results = search_service.search_semantic(query=query_text, limit=limit)
+                search_results = search_service.search_semantic(query=query_text, limit=limit, category_filter_ids=category_filter_ids)
                 logger.info(f"🛍️ Tìm thấy {len(search_results)} sản phẩm.")
 
             # --- GIAI ĐOẠN 3: GỬI KẾT QUẢ VÀ LOGGING ---
