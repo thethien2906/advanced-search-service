@@ -13,6 +13,8 @@ elif [ "$SERVICE_NAME" = "data-collector" ]; then
   exec python -m app.scripts.data_collector
 elif [ "$SERVICE_NAME" = "search-service" ]; then
   exec python -m app.search_worker
+elif [ "$SERVICE_NAME" = "product-embedding-worker" ]; then
+  exec python -m app.product_embedding_worker
 else
   echo "Lỗi: Biến môi trường SERVICE_NAME không hợp lệ hoặc chưa được đặt: $SERVICE_NAME"
   exit 1

@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     SUGGESTION_REQUESTS_TOPIC: str = "suggestion_requests"
     SUGGESTION_RESULTS_TOPIC: str = "suggestion_results"
     MODEL_READY_TOPIC: str = "model_ready_signal"
+    EMBED_PRODUCT_TOPIC: str = "embed_product"
 
 
 # Create a single, reusable instance of the settings

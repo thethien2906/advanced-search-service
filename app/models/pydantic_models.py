@@ -31,3 +31,21 @@ class EmbeddingResponse(BaseModel): #
     Defines the structure of the embedding API's response.
     """
     embedding: List[float] #
+
+class ProductEmbeddingMessage(BaseModel):
+    """
+    Message structure từ .NET khi staff approve product.
+    Kafka topic: embed_product
+    """
+    product_id: str  # Guid from .NET
+    product_name: str
+    description: Optional[str] = None
+    category_id: str  # Guid from .NET
+    category_name: str
+    store_id: str  # Guid from .NET
+    store_name: str
+    price: float
+    province_id: int
+    province_name: str
+    approved_at: str  # ISO timestamp
+    approved_by: str  # Staff Guid
