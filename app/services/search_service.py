@@ -313,12 +313,12 @@ class SearchService:
         root_stats AS (
             SELECT
                 "RootID",
-                SUM("SaleCount") as "TotalSales",
-                AVG("Rating") as "AvgRating",
-                MIN("FinalPrice") as "MinPrice"
+                SUM(pt."SaleCount") as "TotalSales",
+                AVG(pt."Rating") as "AvgRating",
+                MIN(pv."FinalPrice") as "MinPrice"
             FROM product_tree pt
             JOIN "ProductVariant" pv ON pt."LeafID" = pv."ID"
-            WHERE "ProductType" != 'ProductVariant'
+            WHERE pt."ProductType" != 'ProductVariant'
             GROUP BY "RootID"
         )
         SELECT
