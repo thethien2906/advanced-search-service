@@ -6,7 +6,7 @@ from kafka import KafkaConsumer
 from app.core.config import settings
 from app.models.pydantic_models import ProductEmbeddingMessage, EmbeddingRequest
 from app.services.embedding_service import EmbeddingService
-from app.services.database import get_db_connection
+from app.services.database import DatabaseHandler
 import psycopg2
 from psycopg2 import extras
 
@@ -25,6 +25,7 @@ class ProductEmbeddingWorker:
 
     def __init__(self):
         self.embedding_service = EmbeddingService()
+        self.db_handler = DatabaseHandler(settings.DATABASE_URL)
         self.consumer = None
         self.max_retries = 3
         self.retry_delay = 2  # seconds
@@ -51,12 +52,7 @@ class ProductEmbeddingWorker:
         Lấy đầy đủ thông tin product từ database để tạo embedding.
         Sử dụng 14 trường giống seed_data.py
         """
-        conn = None
-        cur = None
         try:
-            conn = get_db_connection()
-            cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
             sql_query = """
             SELECT
                 p."ID" as product_id,
@@ -101,11 +97,17 @@ class ProductEmbeddingWorker:
             AND p."ProductType" IN ('ProductMaster', 'ProductDetail');
             """
 
-            cur.execute(sql_query, (product_id,))
-            result = cur.fetchone()
+            results = self.db_handler.execute_query_with_retry(sql_query, (product_id,))
 
-            if result:
-                return dict(result)
+            if results and len(results) > 0:
+                # Convert tuple result to dict
+                columns = [
+                    'product_id', 'product_name', 'product_description', 'product_type',
+                    'product_material', 'hashtag_names', 'category_name', 'parent_category_name',
+                    'store_name', 'store_story_detail', 'product_story_title', 'product_story_detail',
+                    'province_name', 'region_name', 'sub_region_name'
+                ]
+                return dict(zip(columns, results[0]))
             else:
                 logger.warning(f"⚠️ Product not found or not Master/Detail type: {product_id}")
                 return None
@@ -113,44 +115,30 @@ class ProductEmbeddingWorker:
         except Exception as e:
             logger.error(f"❌ Database error when fetching product {product_id}: {e}")
             return None
-        finally:
-            if cur:
-                cur.close()
-            if conn:
-                conn.close()
 
     def save_embedding_to_db(self, product_id: str, embedding_vector: list) -> bool:
         """
         Lưu embedding vào database.
         Returns True nếu thành công, False nếu thất bại.
         """
-        conn = None
-        cur = None
         try:
-            conn = get_db_connection()
-            cur = conn.cursor()
-
             embedding_string = str(embedding_vector)
 
-            cur.execute(
+            rows_affected = self.db_handler.execute_update_with_retry(
                 'UPDATE "Product" SET "Embedding" = %s WHERE "ID" = %s',
                 (embedding_string, product_id)
             )
 
-            conn.commit()
-            logger.info(f"✅ Successfully saved embedding for Product: {product_id}")
-            return True
+            if rows_affected > 0:
+                logger.info(f"✅ Successfully saved embedding for Product: {product_id}")
+                return True
+            else:
+                logger.warning(f"⚠️ No rows updated for Product: {product_id}")
+                return False
 
         except Exception as e:
             logger.error(f"❌ Failed to save embedding for Product {product_id}: {e}")
-            if conn:
-                conn.rollback()
             return False
-        finally:
-            if cur:
-                cur.close()
-            if conn:
-                conn.close()
 
     def process_message(self, message_data: dict) -> bool:
         """

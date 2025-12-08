@@ -59,3 +59,35 @@ class DatabaseHandler:
                     self.pool.putconn(conn)
                 raise # Re-raise the original exception
         return [] # Should not be reached, but satisfies linters
+
+    def execute_update_with_retry(self, query: str, params: tuple = None, max_retries: int = 3) -> int:
+        """
+        Executes an UPDATE/INSERT/DELETE query with automatic retry on transient connection failures.
+        Returns the number of rows affected.
+        """
+        attempt = 0
+        wait_time = 1
+        while attempt < max_retries:
+            try:
+                conn = self.pool.getconn()
+                with conn.cursor() as cur:
+                    print(f"--- EXECUTING DB UPDATE ---")
+                    cur.execute(query, params)
+                    rows_affected = cur.rowcount
+                    conn.commit()
+                self.pool.putconn(conn)
+                return rows_affected
+            except (psycopg2.OperationalError, psycopg2.InterfaceError) as e:
+                print(f"WARNING: Database connection error: {e}. Retrying in {wait_time}s... (Attempt {attempt + 1}/{max_retries})")
+                attempt += 1
+                if attempt >= max_retries:
+                    raise DatabaseConnectionError("Database is unavailable after multiple retries.") from e
+                time.sleep(wait_time)
+                wait_time *= 2
+            except Exception as e:
+                print(f"ERROR: An unexpected database error occurred: {e}")
+                if 'conn' in locals() and conn:
+                    conn.rollback()
+                    self.pool.putconn(conn)
+                raise
+        return 0
