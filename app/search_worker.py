@@ -33,7 +33,13 @@ def main():
             auto_offset_reset='earliest',
             enable_auto_commit=True,
             group_id='search-worker-group',
-            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+            # Don't use value_deserializer to handle malformed JSON gracefully
+            # We'll parse JSON manually in the message loop
+            # Fix timeout issues
+            max_poll_interval_ms=600000,  # 10 minutes (default: 300000)
+            session_timeout_ms=60000,     # 60 seconds (default: 10000)
+            heartbeat_interval_ms=10000,  # 10 seconds (default: 3000)
+            max_poll_records=10           # Process fewer messages per poll
         )
         logger.info("✅ KafkaConsumer connected successfully.")
     except KafkaError as e:
@@ -67,7 +73,14 @@ def main():
     # Vòng lặp vô tận để xử lý message
     for message in consumer:
         try:
-            request_data = message.value
+            # Parse JSON manually to handle malformed messages gracefully
+            try:
+                request_data = json.loads(message.value.decode('utf-8'))
+            except (json.JSONDecodeError, UnicodeDecodeError, AttributeError) as e:
+                logger.error(f"❌ Failed to decode message: {e}")
+                logger.error(f"   Raw message: {message.value[:200]}...")  # Log first 200 bytes
+                logger.warning("⚠️ Skipping malformed message and continuing...")
+                continue  # Skip this message and continue with next one
             query_text = request_data.get("query_text") or ""  # Cho phép None/rỗng, search_service sẽ handle
             request_id = request_data.get("request_id") # Nhận request_id từ message
             user_id = request_data.get("user_id") # Nhận user_id
@@ -202,8 +215,6 @@ def main():
             # Đảm bảo message được gửi đi
             producer.flush()
 
-        except json.JSONDecodeError:
-            logger.error("Failed to decode message value. Skipping.")
         except Exception as e:
             logger.error(f"An unexpected error occurred while processing message: {e}", exc_info=True)
 

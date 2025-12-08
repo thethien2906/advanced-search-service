@@ -70,7 +70,12 @@ def main():
             auto_offset_reset='earliest',
             enable_auto_commit=False,
             group_id=CONSUMER_GROUP_ID,
-            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+            # Don't use value_deserializer to handle malformed JSON gracefully
+            # Fix timeout issues
+            max_poll_interval_ms=600000,  # 10 minutes (default: 300000)
+            session_timeout_ms=60000,     # 60 seconds (default: 10000)
+            heartbeat_interval_ms=10000,  # 10 seconds (default: 3000)
+            max_poll_records=50           # Process fewer messages per poll
         )
         logger.info(f"KafkaConsumer connected. Listening for messages on topic '{KAFKA_TOPIC}'...")
     except Exception as e:
@@ -79,7 +84,15 @@ def main():
 
     try:
         for message in consumer:
-            event_data = message.value
+            # Parse JSON manually to handle malformed messages gracefully
+            try:
+                event_data = json.loads(message.value.decode('utf-8'))
+            except (json.JSONDecodeError, UnicodeDecodeError, AttributeError) as e:
+                logger.error(f"❌ Failed to decode message: {e}")
+                logger.error(f"   Raw message: {message.value[:200]}...")  # Log first 200 bytes
+                logger.warning("⚠️ Skipping malformed message and continuing...")
+                continue  # Skip this message and continue with next one
+
             try:
                 insert_log_to_db(db_cursor, event_data)
                 db_conn.commit()
