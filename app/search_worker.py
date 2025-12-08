@@ -85,6 +85,58 @@ def main():
                 except (ValueError, TypeError) as e:
                     logger.warning(f"⚠️ Invalid category_filter_ids format: {e}. Ignoring category filter.")
 
+            # [NEW] Parse and validate filter parameters
+            min_price = request_data.get("min_price")
+            max_price = request_data.get("max_price")
+            province_filters = request_data.get("province_filters")
+            region_filters = request_data.get("region_filters")
+            sub_region_filters = request_data.get("sub_region_filters")
+            sort_by = request_data.get("sort_by")
+
+            # Validate price filters
+            if min_price is not None:
+                try:
+                    min_price = float(min_price)
+                    if min_price < 0:
+                        logger.warning(f"⚠️ Invalid min_price (negative): {min_price}. Ignoring.")
+                        min_price = None
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"⚠️ Invalid min_price format: {e}. Ignoring.")
+                    min_price = None
+
+            if max_price is not None:
+                try:
+                    max_price = float(max_price)
+                    if max_price < 0:
+                        logger.warning(f"⚠️ Invalid max_price (negative): {max_price}. Ignoring.")
+                        max_price = None
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"⚠️ Invalid max_price format: {e}. Ignoring.")
+                    max_price = None
+
+            # Validate price range
+            if min_price is not None and max_price is not None and min_price > max_price:
+                logger.warning(f"⚠️ min_price ({min_price}) > max_price ({max_price}). Swapping values.")
+                min_price, max_price = max_price, min_price
+
+            # Validate sort_by
+            valid_sort_values = ["newest", "best-selling", "rating", "price-asc", "price-desc"]
+            if sort_by is not None and sort_by not in valid_sort_values:
+                logger.warning(f"⚠️ Invalid sort_by value: {sort_by}. Valid values: {valid_sort_values}. Ignoring.")
+                sort_by = None
+
+            # Log filter parameters if provided
+            if min_price is not None or max_price is not None:
+                logger.info(f"💰 Price filter: {min_price} - {max_price}")
+            if province_filters:
+                logger.info(f"📍 Province filters: {province_filters}")
+            if region_filters:
+                logger.info(f"🗺️ Region filters: {region_filters}")
+            if sub_region_filters:
+                logger.info(f"🌏 Sub-region filters: {sub_region_filters}")
+            if sort_by:
+                logger.info(f"🔄 Sort by: {sort_by}")
+
             # Chỉ validate request_id (bắt buộc), query_text có thể rỗng (search_service sẽ search theo xu hướng)
             if not request_id:
                 logger.warning(f"⚠️ Received message with missing 'request_id'. Skipping.")
@@ -104,7 +156,17 @@ def main():
             else:
                 # Gọi logic tìm sản phẩm (Product) - Giữ nguyên logic cũ
                 # Có thể dùng search_with_ml hoặc search_semantic tùy cấu hình
-                search_results = search_service.search_semantic(query=query_text, limit=limit, category_filter_ids=category_filter_ids)
+                search_results = search_service.search_semantic(
+                    query=query_text,
+                    limit=limit,
+                    category_filter_ids=category_filter_ids,
+                    min_price=min_price,
+                    max_price=max_price,
+                    province_filters=province_filters,
+                    region_filters=region_filters,
+                    sub_region_filters=sub_region_filters,
+                    sort_by=sort_by
+                )
                 logger.info(f"🛍️ Tìm thấy {len(search_results)} sản phẩm.")
 
             # --- GIAI ĐOẠN 3: GỬI KẾT QUẢ VÀ LOGGING ---
@@ -125,7 +187,7 @@ def main():
             logger.info(f"📤 Sent {len(search_results)} results to '{settings.SEARCH_RESULTS_TOPIC}' for RequestID: {request_id}")
 
             # 2. Gửi dữ liệu log vào topic 'search_logging_events'
-            ranked_ids = [result['id'] for result in search_results] 
+            ranked_ids = [result['id'] for result in search_results]
             log_payload = {
                 "search_id": str(uuid.uuid4()),
                 "user_id": user_id,

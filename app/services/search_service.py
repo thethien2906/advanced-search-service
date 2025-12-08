@@ -33,7 +33,7 @@ class SearchService:
             logger.info(f"Loading model: {settings.MODEL_NAME}...")
             self.model = SentenceTransformer(settings.MODEL_NAME)
             logger.info("Model loaded successfully.")
-            
+
             try:
                 signal_producer = KafkaProducer(
                     bootstrap_servers=settings.KAFKA_BROKER_URL,
@@ -98,10 +98,10 @@ class SearchService:
     def _batch_get_aggregated_features(self, root_ids: List[UUID]) -> Dict[UUID, Dict[str, Any]]:
         """
         🎯 CRITICAL OPTIMIZATION: Fetch aggregated features for ALL roots in ONE query.
-        
-        This replaces the N+1 anti-pattern where _get_aggregated_sku_features 
+
+        This replaces the N+1 anti-pattern where _get_aggregated_sku_features
         was called inside a loop.
-        
+
         Complexity: O(N) queries -> O(1) query
         """
         if not root_ids:
@@ -109,16 +109,16 @@ class SearchService:
 
         # Convert UUIDs to strings for SQL
         root_ids_str = [str(rid) for rid in root_ids]
-        
+
         sql = """
         WITH RECURSIVE product_tree AS (
             -- Base: Start from all requested roots
             SELECT "ID", "ParentID", "ID" as "RootID"
-            FROM "Product" 
+            FROM "Product"
             WHERE "ID" = ANY(%(root_ids)s::uuid[])
-            
+
             UNION ALL
-            
+
             -- Recursive: Get all descendants
             SELECT p."ID", p."ParentID", pt."RootID"
             FROM "Product" p
@@ -140,7 +140,7 @@ class SearchService:
                 AND pv."Quantity" > 0
                 AND NOT EXISTS (
                     SELECT 1 FROM "Product" p_child
-                    WHERE p_child."ParentID" = t."ID" 
+                    WHERE p_child."ParentID" = t."ID"
                       AND p_child."ProductType" = 'ProductVariant'
                 )
         )
@@ -153,12 +153,12 @@ class SearchService:
         FROM leaf_skus
         GROUP BY "RootID"
         """
-        
+
         params = {"root_ids": root_ids_str}
-        
+
         try:
             results = self.db_handler.execute_query_with_retry(sql, params)
-            
+
             # Build lookup dictionary
             feature_map = {}
             for row in results:
@@ -168,7 +168,7 @@ class SearchService:
                     "avg_rating": float(row[3]),
                     "sum_review_count": row[4]
                 }
-            
+
             # Fill in defaults for roots with no data
             for rid in root_ids:
                 if rid not in feature_map:
@@ -178,10 +178,10 @@ class SearchService:
                         "avg_rating": 0.0,
                         "sum_review_count": 0
                     }
-            
+
             logger.info(f"✅ Batch fetched features for {len(root_ids)} roots in 1 query")
             return feature_map
-            
+
         except Exception as e:
             logger.error(f"Error in batch aggregation: {e}", exc_info=True)
             # Return safe defaults
@@ -198,23 +198,23 @@ class SearchService:
     def _batch_get_certifications(self, root_ids: List[UUID]) -> Dict[UUID, bool]:
         """
         🎯 Batch check certifications for all roots in ONE query.
-        
+
         This replaces calling _get_is_certified in a loop.
         """
         if not root_ids:
             return {}
 
         root_ids_str = [str(rid) for rid in root_ids]
-        
+
         sql = """
         WITH RECURSIVE master_roots AS (
             -- Start from requested roots
             SELECT "ID", "ParentID", "ID" as "OriginalID"
             FROM "Product"
             WHERE "ID" = ANY(%(root_ids)s::uuid[])
-            
+
             UNION ALL
-            
+
             -- Climb to L1 Master
             SELECT p."ID", p."ParentID", mr."OriginalID"
             FROM "Product" p
@@ -234,21 +234,21 @@ class SearchService:
         SELECT "OriginalID", true as is_certified
         FROM certified_products
         """
-        
+
         params = {"root_ids": root_ids_str}
-        
+
         try:
             results = self.db_handler.execute_query_with_retry(sql, params)
-            
+
             # Build lookup set
             certified_set = {row[0] for row in results}
-            
+
             # Return dict with all roots
             cert_map = {rid: (rid in certified_set) for rid in root_ids}
-            
+
             logger.info(f"✅ Batch checked certifications for {len(root_ids)} roots")
             return cert_map
-            
+
         except Exception as e:
             logger.error(f"Error in batch certification: {e}", exc_info=True)
             return {rid: False for rid in root_ids}
@@ -256,8 +256,18 @@ class SearchService:
     # ============================================================================
     # EXISTING METHODS (kept for compatibility)
     # ============================================================================
-    def _get_popular_candidates(self, limit: int = 20, category_filter_ids: Optional[List[UUID]] = None) -> List[Dict[str, Any]]:
-        """Get popular products with optional category filter."""
+    def _get_popular_candidates(
+        self,
+        limit: int = 20,
+        category_filter_ids: Optional[List[UUID]] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        province_filters: Optional[List[str]] = None,
+        region_filters: Optional[List[str]] = None,
+        sub_region_filters: Optional[List[str]] = None,
+        sort_by: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get popular products with filters and sorting."""
         sql = """
         WITH RECURSIVE valid_leaf_skus AS (
             SELECT
@@ -273,7 +283,7 @@ class SearchService:
                 AND pv."Quantity" > 0
                 AND NOT EXISTS (
                     SELECT 1 FROM "Product" p_child
-                    WHERE p_child."ParentID" = p_leaf."ID" 
+                    WHERE p_child."ParentID" = p_leaf."ID"
                       AND p_child."ProductType" = 'ProductVariant'
                 )
         ),
@@ -304,8 +314,10 @@ class SearchService:
             SELECT
                 "RootID",
                 SUM("SaleCount") as "TotalSales",
-                AVG("Rating") as "AvgRating"
-            FROM product_tree
+                AVG("Rating") as "AvgRating",
+                MIN("FinalPrice") as "MinPrice"
+            FROM product_tree pt
+            JOIN "ProductVariant" pv ON pt."LeafID" = pv."ID"
             WHERE "ProductType" != 'ProductVariant'
             GROUP BY "RootID"
         )
@@ -319,7 +331,10 @@ class SearchService:
             pr."RegionSpecified" AS "sub_region_name",
             pr."Name" AS "province_name",
             pr."Region" AS "region_name",
-            P_Goc."CreatedAt" AS "createdAt"
+            P_Goc."CreatedAt" AS "createdAt",
+            rs."TotalSales",
+            rs."AvgRating",
+            rs."MinPrice"
         FROM root_stats rs
         JOIN "Product" P_Goc ON rs."RootID" = P_Goc."ID"
         LEFT JOIN "Store" s ON P_Goc."StoreID" = s."ID"
@@ -334,17 +349,57 @@ class SearchService:
 
         where_clauses = []
         params = {"limit": limit}
-        
+
         # Filter by category IDs if provided
         if category_filter_ids:
             category_ids_str = [str(cid) for cid in category_filter_ids]
             where_clauses.append('(pc."ID" = ANY(%(category_ids)s::uuid[]) OR pc_parent."ID" = ANY(%(category_ids)s::uuid[]))')
             params["category_ids"] = category_ids_str
-        
+
+        # Filter by price range
+        if min_price is not None:
+            where_clauses.append('rs."MinPrice" >= %(min_price)s')
+            params["min_price"] = min_price
+
+        if max_price is not None:
+            where_clauses.append('rs."MinPrice" <= %(max_price)s')
+            params["max_price"] = max_price
+
+        # Filter by province
+        if province_filters and len(province_filters) > 0:
+            where_clauses.append('pr."Name" = ANY(%(province_filters)s)')
+            params["province_filters"] = province_filters
+
+        # Filter by region
+        if region_filters and len(region_filters) > 0:
+            where_clauses.append('pr."Region" = ANY(%(region_filters)s)')
+            params["region_filters"] = region_filters
+
+        # Filter by sub-region
+        if sub_region_filters and len(sub_region_filters) > 0:
+            where_clauses.append('pr."RegionSpecified" = ANY(%(sub_region_filters)s)')
+            params["sub_region_filters"] = sub_region_filters
+
         if where_clauses:
             sql += " AND " + " AND ".join(where_clauses)
-        
-        sql += " ORDER BY rs.\"TotalSales\" DESC, rs.\"AvgRating\" DESC LIMIT %(limit)s;"
+
+        # Dynamic ORDER BY based on sort_by parameter
+        order_clause = ""
+        if sort_by == "newest":
+            order_clause = 'ORDER BY P_Goc."CreatedAt" DESC'
+        elif sort_by == "best-selling":
+            order_clause = 'ORDER BY rs."TotalSales" DESC'
+        elif sort_by == "rating":
+            order_clause = 'ORDER BY rs."AvgRating" DESC'
+        elif sort_by == "price-asc":
+            order_clause = 'ORDER BY rs."MinPrice" ASC'
+        elif sort_by == "price-desc":
+            order_clause = 'ORDER BY rs."MinPrice" DESC'
+        else:
+            # Default: by popularity (sales and rating)
+            order_clause = 'ORDER BY rs."TotalSales" DESC, rs."AvgRating" DESC'
+
+        sql += f" {order_clause} LIMIT %(limit)s;"
 
         try:
             db_results = self.db_handler.execute_query_with_retry(sql, params)
@@ -367,8 +422,18 @@ class SearchService:
             logger.error(f"Error fetching popular candidates: {e}", exc_info=True)
             return []
 
-    def _get_semantic_candidates(self, query: str, category_filter_ids: Optional[List[UUID]] = None) -> List[Dict[str, Any]]:
-        """Get semantic search candidates with optional category filter."""
+    def _get_semantic_candidates(
+        self,
+        query: str,
+        category_filter_ids: Optional[List[UUID]] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        province_filters: Optional[List[str]] = None,
+        region_filters: Optional[List[str]] = None,
+        sub_region_filters: Optional[List[str]] = None,
+        sort_by: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        """Get semantic search candidates with filters and sorting."""
         if not self.model:
             raise RuntimeError("Search model not available.")
 
@@ -388,7 +453,7 @@ class SearchService:
                 AND pv."Quantity" > 0
                 AND NOT EXISTS (
                     SELECT 1 FROM "Product" p_child
-                    WHERE p_child."ParentID" = p_leaf."ID" 
+                    WHERE p_child."ParentID" = p_leaf."ID"
                       AND p_child."ProductType" = 'ProductVariant'
                 )
         ),
@@ -399,9 +464,9 @@ class SearchService:
                 p_parent."ProductType"
             FROM "Product" p_parent
             JOIN valid_leaf_skus vls ON p_parent."ID" = vls."ParentID"
-            
+
             UNION ALL
-            
+
             SELECT
                 p_parent."ID",
                 p_parent."ParentID",
@@ -414,6 +479,20 @@ class SearchService:
             SELECT DISTINCT "ID"
             FROM display_root_cte
             WHERE "ProductType" != 'ProductVariant'
+        ),
+        root_aggregates AS (
+            SELECT
+                vdr."ID" as "RootID",
+                MIN(pv."FinalPrice") as "MinPrice",
+                SUM(pv."SaleCount") as "TotalSales",
+                AVG(pv."Rating") as "AvgRating"
+            FROM valid_display_roots vdr
+            JOIN valid_leaf_skus vls ON vls."ParentID" IN (
+                SELECT "ID" FROM display_root_cte WHERE display_root_cte."ID" = vdr."ID"
+                OR display_root_cte."ParentID" = vdr."ID"
+            )
+            JOIN "ProductVariant" pv ON vls."ID" = pv."ID"
+            GROUP BY vdr."ID"
         )
         SELECT
             P_Goc."ID",
@@ -425,9 +504,13 @@ class SearchService:
             pr."RegionSpecified" AS "sub_region_name",
             pr."Name" AS "province_name",
             pr."Region" AS "region_name",
-            P_Goc."CreatedAt" AS "createdAt"
+            P_Goc."CreatedAt" AS "createdAt",
+            COALESCE(ra."MinPrice", 0) as "MinPrice",
+            COALESCE(ra."TotalSales", 0) as "TotalSales",
+            COALESCE(ra."AvgRating", 0.0) as "AvgRating"
         FROM "Product" P_Goc
         JOIN valid_display_roots vdr ON P_Goc."ID" = vdr."ID"
+        LEFT JOIN root_aggregates ra ON P_Goc."ID" = ra."RootID"
         LEFT JOIN "Store" s ON P_Goc."StoreID" = s."ID"
         LEFT JOIN "Province" pr ON P_Goc."ProvinceID" = pr."ID"
         LEFT JOIN "ProductCategory" pc ON P_Goc."CategoryID" = pc."ID"
@@ -437,25 +520,62 @@ class SearchService:
             AND P_Goc."IsActive" = true
             AND s."Status" = 'Approved'
         """
-        
+
         where_clauses = []
         params = {"query_embedding": str(list(query_embedding))}
-        
+
         # Filter by category IDs if provided
         if category_filter_ids:
             category_ids_str = [str(cid) for cid in category_filter_ids]
             where_clauses.append('(pc."ID" = ANY(%(category_ids)s::uuid[]) OR pc_parent."ID" = ANY(%(category_ids)s::uuid[]))')
             params["category_ids"] = category_ids_str
-        
-        regions_to_filter = self._get_regions_for_sql_filter(query)
-        if regions_to_filter:
+
+        # Filter by price range
+        if min_price is not None:
+            where_clauses.append('COALESCE(ra."MinPrice", 0) >= %(min_price)s')
+            params["min_price"] = min_price
+
+        if max_price is not None:
+            where_clauses.append('COALESCE(ra."MinPrice", 0) <= %(max_price)s')
+            params["max_price"] = max_price
+
+        # Filter by province
+        if province_filters and len(province_filters) > 0:
+            where_clauses.append('pr."Name" = ANY(%(province_filters)s)')
+            params["province_filters"] = province_filters
+
+        # Filter by region
+        if region_filters and len(region_filters) > 0:
+            where_clauses.append('pr."Region" = ANY(%(region_filters)s)')
+            params["region_filters"] = region_filters
+
+        # Filter by sub-region (check both explicit filters and query-based detection)
+        detected_regions = self._get_regions_for_sql_filter(query)
+        if sub_region_filters and len(sub_region_filters) > 0:
+            where_clauses.append('pr."RegionSpecified" = ANY(%(sub_region_filters)s)')
+            params["sub_region_filters"] = sub_region_filters
+        elif detected_regions:
             where_clauses.append('pr."RegionSpecified" = ANY(%(regions)s)')
-            params["regions"] = regions_to_filter
+            params["regions"] = detected_regions
 
         final_sql = base_sql
         if where_clauses:
             final_sql += " AND " + " AND ".join(where_clauses)
-        final_sql += " ORDER BY distance ASC;"
+
+        # Dynamic ORDER BY based on sort_by parameter
+        if sort_by == "newest":
+            final_sql += ' ORDER BY P_Goc."CreatedAt" DESC;'
+        elif sort_by == "best-selling":
+            final_sql += ' ORDER BY COALESCE(ra."TotalSales", 0) DESC;'
+        elif sort_by == "rating":
+            final_sql += ' ORDER BY COALESCE(ra."AvgRating", 0.0) DESC;'
+        elif sort_by == "price-asc":
+            final_sql += ' ORDER BY COALESCE(ra."MinPrice", 0) ASC;'
+        elif sort_by == "price-desc":
+            final_sql += ' ORDER BY COALESCE(ra."MinPrice", 0) DESC;'
+        else:
+            # Default: by relevance (distance)
+            final_sql += " ORDER BY distance ASC;"
 
         db_results = self.db_handler.execute_query_with_retry(final_sql, params)
 
@@ -480,19 +600,36 @@ class SearchService:
     # ============================================================================
     # 🚀 OPTIMIZED: search_semantic - Uses batch queries
     # ============================================================================
-    def search_semantic(self, query: str, limit: int = 20, category_filter_ids: Optional[List[UUID]] = None) -> List[Dict[str, Any]]:
+    def search_semantic(
+        self,
+        query: str,
+        limit: int = 20,
+        category_filter_ids: Optional[List[UUID]] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        province_filters: Optional[List[str]] = None,
+        region_filters: Optional[List[str]] = None,
+        sub_region_filters: Optional[List[str]] = None,
+        sort_by: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
-        Optimized semantic search using batch queries.
-        
+        Optimized semantic search using batch queries with filters and sorting.
+
         BEFORE: O(N) queries for aggregation
         AFTER:  O(1) query for all aggregations
         """
         # Get candidates
         if not query or not query.strip():
             logger.info("Empty query. Fetching popular products.")
-            candidates = self._get_popular_candidates(limit, category_filter_ids)
+            candidates = self._get_popular_candidates(
+                limit, category_filter_ids, min_price, max_price,
+                province_filters, region_filters, sub_region_filters, sort_by
+            )
         else:
-            candidates = self._get_semantic_candidates(query, category_filter_ids)
+            candidates = self._get_semantic_candidates(
+                query, category_filter_ids, min_price, max_price,
+                province_filters, region_filters, sub_region_filters, sort_by
+            )
 
         if not candidates:
             return []
@@ -541,25 +678,42 @@ class SearchService:
 
         enriched_results.sort(key=lambda x: x["relevance_score"], reverse=True)
         logger.info(f"✅ Enrichment complete. Returning {min(limit, len(enriched_results))} results.")
-        
+
         return enriched_results[:limit]
 
     # ============================================================================
     # �� OPTIMIZED: search_with_ml - Uses batch queries
     # ============================================================================
-    def search_with_ml(self, query: str, limit: int = 20, category_filter_ids: Optional[List[UUID]] = None) -> List[Dict[str, Any]]:
+    def search_with_ml(
+        self,
+        query: str,
+        limit: int = 20,
+        category_filter_ids: Optional[List[UUID]] = None,
+        min_price: Optional[float] = None,
+        max_price: Optional[float] = None,
+        province_filters: Optional[List[str]] = None,
+        region_filters: Optional[List[str]] = None,
+        sub_region_filters: Optional[List[str]] = None,
+        sort_by: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
-        Optimized ML search using batch queries.
-        
+        Optimized ML search using batch queries with filters and sorting.
+
         PERFORMANCE GAIN: 100x faster for 100 candidates
         - BEFORE: 100 queries for features + 100 queries for certs = 200 queries
         - AFTER:  1 query for features + 1 query for certs = 2 queries
         """
         if not query or not query.strip():
             logger.info("Empty query. Using popular products (no ML).")
-            return self.search_semantic(query, limit, category_filter_ids)
+            return self.search_semantic(
+                query, limit, category_filter_ids, min_price, max_price,
+                province_filters, region_filters, sub_region_filters, sort_by
+            )
 
-        candidates = self._get_semantic_candidates(query, category_filter_ids)
+        candidates = self._get_semantic_candidates(
+            query, category_filter_ids, min_price, max_price,
+            province_filters, region_filters, sub_region_filters, sort_by
+        )
         if not candidates:
             return []
 
@@ -618,7 +772,7 @@ class SearchService:
 
             candidates.sort(key=lambda x: x["relevance_score"], reverse=True)
             logger.info(f"✅ ML ranking complete. Returning {min(limit, len(candidates))} results.")
-            
+
             return candidates[:limit]
 
         except Exception as e:
@@ -635,7 +789,7 @@ class SearchService:
 
         embedding_service = EmbeddingService()
         query_vector = embedding_service.create_text_embedding(query)
-        
+
         sql = """
         SELECT
             "ID",
@@ -644,12 +798,12 @@ class SearchService:
             "Slug",
             ("Embedding" <=> %(query_vector)s) as distance
         FROM "Document"
-        WHERE "IsPublished" = true 
+        WHERE "IsPublished" = true
           AND "Embedding" IS NOT NULL
         ORDER BY distance ASC
         LIMIT %(limit)s;
         """
-        
+
         params = {
             "query_vector": str(query_vector),
             "limit": limit
