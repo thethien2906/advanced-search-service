@@ -581,9 +581,11 @@ class SearchService:
 
         candidates = []
         for row in db_results:
+            # Handle None distance (when embedding is NULL - products not yet seeded)
+            distance = row[1] if row[1] is not None else 999999.0
             candidates.append({
                 "id": row[0],
-                "relevance_score": float(row[1]),
+                "relevance_score": float(distance),
                 "name": row[2],
                 "product_images": row[3] or [],
                 "store_status": row[4],
