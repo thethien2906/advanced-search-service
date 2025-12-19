@@ -14,7 +14,8 @@ from app.services.embedding_service import EmbeddingService
 from app.services.search_constants import (
     QUERY_EXPANSION_MAP,
     REGION_HIERARCHY,
-    SUB_REGION_KEYWORDS
+    SUB_REGION_KEYWORDS,
+    MINIMUM_RELEVANCE_THRESHOLD
 )
 
 logger = logging.getLogger(__name__)
@@ -596,7 +597,19 @@ class SearchService:
                 "createdAt": row[9]
             })
 
-        candidates.sort(key=lambda x: x["relevance_score"], reverse=False)
+        # Filter by minimum relevance threshold if query is provided
+        if query and query.strip():
+            candidates = [c for c in candidates if (1.0 - c["relevance_score"]) >= MINIMUM_RELEVANCE_THRESHOLD]
+            logger.info(f"Filtered to {len(candidates)} candidates above relevance threshold {MINIMUM_RELEVANCE_THRESHOLD}")
+
+        # Only sort by relevance_score if no sort_by is specified
+        # Otherwise, preserve the order from SQL (already sorted by sort_by parameter)
+        if sort_by is None:
+            candidates.sort(key=lambda x: x["relevance_score"], reverse=False)
+            logger.info("Sorted by relevance_score (distance ascending)")
+        else:
+            logger.info(f"Preserving SQL sort order (sort_by={sort_by})")
+
         return candidates[:100]
 
     # ============================================================================
@@ -635,6 +648,17 @@ class SearchService:
 
         if not candidates:
             return []
+
+        # Apply minimum relevance threshold for non-empty queries
+        if query and query.strip():
+            original_count = len(candidates)
+            candidates = [c for c in candidates if (1.0 - c["relevance_score"]) >= MINIMUM_RELEVANCE_THRESHOLD]
+            if len(candidates) < original_count:
+                logger.info(f"Filtered from {original_count} to {len(candidates)} candidates using threshold {MINIMUM_RELEVANCE_THRESHOLD}")
+
+            if not candidates:
+                logger.info("No candidates met the minimum relevance threshold.")
+                return []
 
         logger.info(f"Got {len(candidates)} candidates. Starting batch enrichment...")
 
@@ -678,7 +702,14 @@ class SearchService:
             }
             enriched_results.append(enriched_product)
 
-        enriched_results.sort(key=lambda x: x["relevance_score"], reverse=True)
+        # Only sort by relevance_score if no sort_by is specified
+        # Otherwise, preserve the order from candidates (already sorted by SQL)
+        if sort_by is None:
+            enriched_results.sort(key=lambda x: x["relevance_score"], reverse=True)
+            logger.info("Sorted by relevance_score (similarity descending)")
+        else:
+            logger.info(f"Preserving order from SQL (sort_by={sort_by})")
+
         logger.info(f"✅ Enrichment complete. Returning {min(limit, len(enriched_results))} results.")
 
         return enriched_results[:limit]
@@ -719,11 +750,28 @@ class SearchService:
         if not candidates:
             return []
 
+        # Apply minimum relevance threshold
+        original_count = len(candidates)
+        candidates = [c for c in candidates if (1.0 - c["relevance_score"]) >= MINIMUM_RELEVANCE_THRESHOLD]
+        if len(candidates) < original_count:
+            logger.info(f"Filtered from {original_count} to {len(candidates)} candidates using threshold {MINIMUM_RELEVANCE_THRESHOLD}")
+
+        if not candidates:
+            logger.info("No candidates met the minimum relevance threshold.")
+            return []
+
         if self.ranker.model is None:
             logger.warning("ML Ranker not available. Falling back to semantic.")
             for p in candidates:
                 p["relevance_score"] = 1.0 - p["relevance_score"]
-            candidates.sort(key=lambda x: x["relevance_score"], reverse=True)
+
+            # Only sort by relevance_score if no sort_by is specified
+            if sort_by is None:
+                candidates.sort(key=lambda x: x["relevance_score"], reverse=True)
+                logger.info("Sorted by relevance_score (fallback)")
+            else:
+                logger.info(f"Preserving SQL sort order (sort_by={sort_by}, fallback mode)")
+
             return candidates[:limit]
 
         logger.info(f"Got {len(candidates)} candidates. Starting batch feature extraction...")
@@ -781,7 +829,14 @@ class SearchService:
             logger.error(f"ML ranking error: {e}", exc_info=True)
             for p in candidates:
                 p["relevance_score"] = 1.0 - p["relevance_score"]
-            candidates.sort(key=lambda x: x["relevance_score"], reverse=True)
+
+            # Only sort by relevance_score if no sort_by is specified
+            if sort_by is None:
+                candidates.sort(key=lambda x: x["relevance_score"], reverse=True)
+                logger.info("Sorted by relevance_score (error fallback)")
+            else:
+                logger.info(f"Preserving SQL sort order (sort_by={sort_by}, error fallback)")
+
             return candidates[:limit]
 
     def search_documents(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:

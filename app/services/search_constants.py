@@ -4,6 +4,12 @@ This file centralizes all constants used by the search and feature extraction
 services, making the codebase cleaner and easier to maintain.
 """
 
+# --- Minimum Relevance Score Threshold ---
+# Products with relevance score below this threshold will be filtered out
+# This prevents irrelevant products from appearing in search results
+# even when they match regional/category filters
+MINIMUM_RELEVANCE_THRESHOLD = 0.15
+
 # --- Feature Schema for the ML Ranker ---
 FEATURE_SCHEMA = [
     "semantic_similarity",
