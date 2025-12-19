@@ -281,7 +281,6 @@ class SearchService:
             WHERE
                 p_leaf."ProductType" = 'ProductVariant'
                 AND p_leaf."IsActive" = true
-                AND pv."Quantity" > 0
                 AND NOT EXISTS (
                     SELECT 1 FROM "Product" p_child
                     WHERE p_child."ParentID" = p_leaf."ID"
@@ -310,17 +309,24 @@ class SearchService:
                 p_grand."ProductType"
             FROM product_tree pt
             JOIN "Product" p_grand ON pt."RootID" = p_grand."ParentID"
+            WHERE pt."ProductType" = 'ProductVariant'  -- Only continue if current is ProductVariant
+        ),
+        display_roots AS (
+            -- Select the Display Roots: nodes where we stopped climbing
+            SELECT DISTINCT "RootID"
+            FROM product_tree
+            WHERE "ProductType" != 'ProductVariant'  -- The stopping point
         ),
         root_stats AS (
             SELECT
-                "RootID",
+                pt."RootID",
                 SUM(pt."SaleCount") as "TotalSales",
                 AVG(pt."Rating") as "AvgRating",
                 MIN(pv."FinalPrice") as "MinPrice"
             FROM product_tree pt
+            JOIN display_roots dr ON pt."RootID" = dr."RootID"
             JOIN "ProductVariant" pv ON pt."LeafID" = pv."ID"
-            WHERE pt."ProductType" != 'ProductVariant'
-            GROUP BY "RootID"
+            GROUP BY pt."RootID"
         )
         SELECT
             P_Goc."ID",
@@ -445,55 +451,60 @@ class SearchService:
         WITH RECURSIVE valid_leaf_skus AS (
             SELECT
                 p_leaf."ID",
-                p_leaf."ParentID"
+                p_leaf."ParentID",
+                pv."SaleCount",
+                pv."Rating"
             FROM "Product" p_leaf
             JOIN "ProductVariant" pv ON p_leaf."ID" = pv."ID"
             WHERE
                 p_leaf."ProductType" = 'ProductVariant'
                 AND p_leaf."IsActive" = true
-                AND pv."Quantity" > 0
                 AND NOT EXISTS (
                     SELECT 1 FROM "Product" p_child
                     WHERE p_child."ParentID" = p_leaf."ID"
                       AND p_child."ProductType" = 'ProductVariant'
                 )
         ),
-        display_root_cte AS (
+        product_tree AS (
             SELECT
-                p_parent."ID",
-                p_parent."ParentID",
+                vls."ID" as "LeafID",
+                vls."ParentID",
+                vls."SaleCount",
+                vls."Rating",
+                p_parent."ID" as "RootID",
                 p_parent."ProductType"
-            FROM "Product" p_parent
-            JOIN valid_leaf_skus vls ON p_parent."ID" = vls."ParentID"
+            FROM valid_leaf_skus vls
+            JOIN "Product" p_parent ON vls."ParentID" = p_parent."ID"
 
             UNION ALL
 
             SELECT
-                p_parent."ID",
-                p_parent."ParentID",
-                p_parent."ProductType"
-            FROM "Product" p_parent
-            JOIN display_root_cte dr ON p_parent."ID" = dr."ParentID"
-            WHERE dr."ProductType" = 'ProductVariant'
+                pt."LeafID",
+                pt."ParentID",
+                pt."SaleCount",
+                pt."Rating",
+                p_grand."ID" as "RootID",
+                p_grand."ProductType"
+            FROM product_tree pt
+            JOIN "Product" p_grand ON pt."RootID" = p_grand."ParentID"
+            WHERE pt."ProductType" = 'ProductVariant'  -- Only continue if current is ProductVariant
         ),
-        valid_display_roots AS (
-            SELECT DISTINCT "ID"
-            FROM display_root_cte
-            WHERE "ProductType" != 'ProductVariant'
+        display_roots AS (
+            -- Select the Display Roots: nodes where we stopped climbing
+            SELECT DISTINCT "RootID"
+            FROM product_tree
+            WHERE "ProductType" != 'ProductVariant'  -- The stopping point
         ),
-        root_aggregates AS (
+        root_stats AS (
             SELECT
-                vdr."ID" as "RootID",
-                MIN(pv."FinalPrice") as "MinPrice",
-                SUM(pv."SaleCount") as "TotalSales",
-                AVG(pv."Rating") as "AvgRating"
-            FROM valid_display_roots vdr
-            JOIN valid_leaf_skus vls ON vls."ParentID" IN (
-                SELECT "ID" FROM display_root_cte WHERE display_root_cte."ID" = vdr."ID"
-                OR display_root_cte."ParentID" = vdr."ID"
-            )
-            JOIN "ProductVariant" pv ON vls."ID" = pv."ID"
-            GROUP BY vdr."ID"
+                pt."RootID",
+                SUM(pt."SaleCount") as "TotalSales",
+                AVG(pt."Rating") as "AvgRating",
+                MIN(pv."FinalPrice") as "MinPrice"
+            FROM product_tree pt
+            JOIN display_roots dr ON pt."RootID" = dr."RootID"
+            JOIN "ProductVariant" pv ON pt."LeafID" = pv."ID"
+            GROUP BY pt."RootID"
         )
         SELECT
             P_Goc."ID",
@@ -506,12 +517,11 @@ class SearchService:
             pr."Name" AS "province_name",
             pr."Region" AS "region_name",
             P_Goc."CreatedAt" AS "createdAt",
-            COALESCE(ra."MinPrice", 0) as "MinPrice",
-            COALESCE(ra."TotalSales", 0) as "TotalSales",
-            COALESCE(ra."AvgRating", 0.0) as "AvgRating"
-        FROM "Product" P_Goc
-        JOIN valid_display_roots vdr ON P_Goc."ID" = vdr."ID"
-        LEFT JOIN root_aggregates ra ON P_Goc."ID" = ra."RootID"
+            rs."TotalSales",
+            rs."AvgRating",
+            rs."MinPrice"
+        FROM root_stats rs
+        JOIN "Product" P_Goc ON rs."RootID" = P_Goc."ID"
         LEFT JOIN "Store" s ON P_Goc."StoreID" = s."ID"
         LEFT JOIN "Province" pr ON P_Goc."ProvinceID" = pr."ID"
         LEFT JOIN "ProductCategory" pc ON P_Goc."CategoryID" = pc."ID"
@@ -533,11 +543,11 @@ class SearchService:
 
         # Filter by price range
         if min_price is not None:
-            where_clauses.append('COALESCE(ra."MinPrice", 0) >= %(min_price)s')
+            where_clauses.append('rs."MinPrice" >= %(min_price)s')
             params["min_price"] = min_price
 
         if max_price is not None:
-            where_clauses.append('COALESCE(ra."MinPrice", 0) <= %(max_price)s')
+            where_clauses.append('rs."MinPrice" <= %(max_price)s')
             params["max_price"] = max_price
 
         # Filter by province
@@ -567,13 +577,13 @@ class SearchService:
         if sort_by == "newest":
             final_sql += ' ORDER BY P_Goc."CreatedAt" DESC;'
         elif sort_by == "best-selling":
-            final_sql += ' ORDER BY COALESCE(ra."TotalSales", 0) DESC;'
+            final_sql += ' ORDER BY rs."TotalSales" DESC;'
         elif sort_by == "rating":
-            final_sql += ' ORDER BY COALESCE(ra."AvgRating", 0.0) DESC;'
+            final_sql += ' ORDER BY rs."AvgRating" DESC;'
         elif sort_by == "price-asc":
-            final_sql += ' ORDER BY COALESCE(ra."MinPrice", 0) ASC;'
+            final_sql += ' ORDER BY rs."MinPrice" ASC;'
         elif sort_by == "price-desc":
-            final_sql += ' ORDER BY COALESCE(ra."MinPrice", 0) DESC;'
+            final_sql += ' ORDER BY rs."MinPrice" DESC;'
         else:
             # Default: by relevance (distance)
             final_sql += " ORDER BY distance ASC;"
