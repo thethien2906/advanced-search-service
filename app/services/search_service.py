@@ -287,45 +287,43 @@ class SearchService:
                       AND p_child."ProductType" = 'ProductVariant'
                 )
         ),
-        product_tree AS (
+        display_root_cte AS (
             SELECT
-                vls."ID" as "LeafID",
-                vls."ParentID",
-                vls."SaleCount",
-                vls."Rating",
-                p_parent."ID" as "RootID",
+                p_parent."ID",
+                p_parent."ParentID",
                 p_parent."ProductType"
-            FROM valid_leaf_skus vls
-            JOIN "Product" p_parent ON vls."ParentID" = p_parent."ID"
+            FROM "Product" p_parent
+            JOIN valid_leaf_skus vls ON p_parent."ID" = vls."ParentID"
 
             UNION ALL
 
             SELECT
-                pt."LeafID",
-                pt."ParentID",
-                pt."SaleCount",
-                pt."Rating",
-                p_grand."ID" as "RootID",
-                p_grand."ProductType"
-            FROM product_tree pt
-            JOIN "Product" p_grand ON pt."RootID" = p_grand."ParentID"
-            WHERE pt."ProductType" = 'ProductVariant'
+                p_parent."ID",
+                p_parent."ParentID",
+                p_parent."ProductType"
+            FROM "Product" p_parent
+            JOIN display_root_cte dr ON p_parent."ID" = dr."ParentID"
+            WHERE dr."ProductType" = 'ProductVariant'
         ),
         valid_display_roots AS (
-            SELECT DISTINCT "RootID"
-            FROM product_tree
+            SELECT DISTINCT "ID"
+            FROM display_root_cte
             WHERE "ProductType" != 'ProductVariant'
         ),
         root_stats AS (
             SELECT
-                pt."RootID",
-                SUM(pt."SaleCount") as "TotalSales",
-                AVG(pt."Rating") as "AvgRating",
+                vdr."ID" as "RootID",
+                SUM(vls."SaleCount") as "TotalSales",
+                AVG(vls."Rating") as "AvgRating",
                 MIN(pv."FinalPrice") as "MinPrice"
-            FROM product_tree pt
-            JOIN valid_display_roots vdr ON pt."RootID" = vdr."RootID"
-            JOIN "ProductVariant" pv ON pt."LeafID" = pv."ID"
-            GROUP BY pt."RootID"
+            FROM valid_display_roots vdr
+            JOIN valid_leaf_skus vls ON vls."ParentID" IN (
+                SELECT "ID" FROM display_root_cte
+                WHERE display_root_cte."ID" = vdr."ID"
+                   OR display_root_cte."ParentID" = vdr."ID"
+            )
+            JOIN "ProductVariant" pv ON vls."ID" = pv."ID"
+            GROUP BY vdr."ID"
         )
         SELECT
             P_Goc."ID",
